@@ -1,0 +1,196 @@
+:root {
+  --main-bg-color: #F5F5F5;
+  --main-border-color: grey;
+  --collection-border-color: var(--main-border-color);
+}
+
+body {
+  align-items: flex-start;
+  background-color: var(--main-bg-color);
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-flow: row wrap;
+  margin: 0;
+/*  padding: 0px 16px;*/
+}
+
+a {
+  color: #00B7FF;
+}
+
+#debug {
+  width: 100%;
+  border-bottom: 1px dotted var(--main-border-color);
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.collection {
+  border: 1px solid var(--collection-border-color);
+  min-width: 170px;
+  flex: none;
+}
+
+.collection > h2 {
+  margin: 8px 0;
+  text-align: center;
+}
+
+.collection-category {
+  border-top: 2px solid var(--collection-border-color);
+  padding: 0px 5px;
+}
+
+.collection-category > h3 {
+  margin: 5px 0;
+}
+
+.control-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.control {
+  cursor: pointer;
+  text-align: center;
+  width: 12px;
+}
+
+.control ~ .control {
+  margin-left: 5px;
+}
+
+.collection-name, .item-name {
+  flex: 1;
+}
+
+.collection-item {
+  
+}
+
+.item-name-line {
+  margin: 5px 0;
+}
+
+.collection-item.editing > .item-name-line {
+  display: none;
+}
+
+.item-name {
+  cursor: pointer;
+}
+
+.collection-item:not(.editing) > .item-input {
+  display: none;
+}
+
+#objects {
+  margin-left: 16px;
+}
+
+#library {
+  margin-right: 16px;
+}
+
+.library-item {
+  margin: 5px 0;
+}
+
+#content-list {
+  display: flex;
+  flex: auto;
+  flex-direction: column;
+  margin: 0 10px;
+/*  overflow: auto;*/
+}
+
+.content {
+  border: 2px solid var(--main-border-color);
+  border-radius: 10px 10px 0 0;
+  margin-bottom: 10px;
+/*  overflow: hidden;*/
+}
+
+.content > h3 {
+  border-bottom: 2px solid var(--main-border-color);
+  margin: 5px 0 0;
+  padding: 0 5px 5px;
+}
+
+.content.minimized > h3 {
+  border: none;
+  margin: 5px 0 0;
+}
+
+.content:not(.minimized) .control-show {
+  display: none;
+}
+
+.content.minimized .control-min {
+  display: none;
+}
+
+.content.minimized .content-workspace {
+  display: none;
+}
+
+.process-content {
+  cursor: none;
+}
+
+.view-content {
+  
+}
+
+.content-item {
+  background: white;
+  border: 1px solid var(--main-border-color);
+  border-radius: 5px 5px 0 0;
+  cursor: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  position: absolute;
+}
+
+.content-item:hover {
+    box-shadow: 0px 0px 2px #808080;
+}
+
+.content-item > h4 {
+  border-bottom: 1px solid var(--main-border-color);
+  cursor: pointer;
+  margin: 3px 0 0;
+  padding: 0 3px 3px;
+  text-align: center;
+}
+
+.content-item-data {
+/*  min-height: 80px;*/
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-item-data input {
+  flex: auto;
+}
+
+.content-wrapper {
+  position: relative;
+}
+
+.content-workspace {
+  min-height: 400px;
+  position: relative;
+  z-index: 10;
+}
+
+.content-canvas {
+/*  background: rgba(255, 0, 0, 0.2);*/
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  z-index: 20;
+}
