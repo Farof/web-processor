@@ -5,6 +5,6 @@
 - better contextual cursor in workspace
 - arrow at end of link
 - grey element if not a suitable target
-- simplier save system / server-side save
-- cleaner WPObj destruction
-- update contentNode name when changed in object list
+- server-side save
+- destroy link
+- multiple input / output

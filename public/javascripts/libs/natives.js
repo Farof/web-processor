@@ -8,23 +8,6 @@
 
   /* Object */
   Object.defineProperties(Object, {
-    undefined: {
-      value: (function () {}()),
-      writable: false
-    },
-
-    isUndefined: {
-      value: function (value) {
-        return value === null || value === Object.undefined;
-      }
-    },
-
-    isDefined: {
-      value: function (value) {
-        return !Object.isUndefined(value);
-      }
-    },
-
     same: {
       value: function (a, b) {
         var key, i, ln;
@@ -285,23 +268,6 @@
     }
   });
 
-
-  /* Array */
-  Object.defineProperties(Array, {
-    from: {
-      value: function (obj) {
-        return Array.isArray(obj) ?
-                obj :
-                (obj === Object.undefined ?
-                  [] :
-                  ((typeof obj === 'object' && typeof obj.length === 'number') ?
-                    Array.prototype.slice.call(obj) :
-                    [obj])
-                );
-      }
-    }
-  });
-
   /* Array.prototype */
   Object.defineProperties(Array.prototype, {
     clone: {
@@ -325,34 +291,6 @@
     contains: {
       value: function (item) {
         return [].indexOf.call(this, item) > -1;
-      }
-    },
-
-    match: {
-      value: function (func) {
-        var i, ln;
-
-        for (i = 0, ln = this.length; i < ln; i += 1) {
-          if (func(this[i], i, this)) {
-            return this[i];
-          }
-        }
-
-        return;
-      }
-    },
-
-    lastMatch: {
-      value: function (func) {
-        var i, ln, ret;
-
-        for (i = 0, ln = this.length; i < ln; i += 1) {
-          if (func(this[i], i, this)) {
-            ret = this[i];
-          }
-        }
-
-        return ret;
       }
     },
 
@@ -388,34 +326,6 @@
           this.splice(i, 1);
         }
         return this;
-      }
-    },
-
-    every: {
-      value: function (func) {
-        var i, ln;
-
-        for (i = 0, ln = this.length; i < ln; i += 1) {
-          if (!func(this[i], i, this)) {
-            return false;
-          }
-        }
-
-        return true;
-      }
-    },
-
-    some: {
-      value: function (func) {
-        var i, ln;
-
-        for (i = 0, ln = this.length; i < ln; i += 1) {
-          if (func(this[i], i, this)) {
-            return true;
-          }
-        }
-
-        return this.length > 0 ? false : true;
       }
     },
 
@@ -526,7 +436,15 @@
         return this;
       }
     },
-    
+
+    getParent: {
+      enumerable: true,
+      value: function (selector, self) {
+        if (self && this.mozMatchesSelector(selector)) return this;
+        else if (this.parentNode) return this.parentNode.getParent(selector, true);
+      }
+    },
+
     addEvents: {
       enumerable: true,
       value: function (events) {
@@ -534,127 +452,12 @@
           this.addEventListener(ev, events[ev]);
         }
       }
-    },
-
-    getPosition: {
-      enumerable: true,
-      value: function (topParent) {
-        var
-          rect = this.getBoundingClientRect(),
-          parentRect = (topParent || document.body).getBoundingClientRect(),
-          coord = Object.create({}, HTMLElement.ClientRectOverload);
-
-          coord.left = rect.left - parentRect.left;
-          coord.top = rect.top - parentRect.top;
-          coord.width = rect.width;
-          coord.height = rect.height;
-          coord.right = coord.left + rect.width;
-          coord.bottom = coord.top + rect.height;
-
-          return coord;
-      }
-    },
-
-    /*getPosition: {
-      enumerable: true,
-      value: function (topParent) {
-        var
-          parent,
-          node = this,
-          coord = {
-            left: node.offsetLeft,
-            top: node.offsetTop
-          };
-
-        topParent = topParent || document.body;
-        parent = node.offsetParent;
-
-        while (parent && parent !== topParent) {
-          coord.left += parent.offsetLeft;
-          coord.top += parent.offsetTop;
-          parent = parent.offsetParent;
-        }
-
-        coord.right = coord.left + node.scrollWidth;
-        coord.centerX = coord.left + node.scrollWidth / 2;
-        coord.bottom = coord.top + node.scrollHeight;
-        coord.centerY = coord.top + node.scrollHeight / 2;
-
-        return coord;
-      },
-    }*/
-
-    setDragAction: {
-      value: function (action, options) {
-        var
-          container = options.container || document,
-          mouseup = function (e) {
-            container.removeEventListener('mousemove', action, false);
-            container.removeEventListener('mouseup', mouseup, false);
-          };
-
-        action = action.bind(this);
-
-        this.addEventListener('mousedown', function (e) {
-          e.stop();
-          container.addEventListener('mousemove', action, false);
-          container.addEventListener('mouseup', mouseup, false);
-        }, false);
-
-        if (typeof options.mousedown === 'function') {
-          this.addEventListener('mousedown', options.mousedown, false);
-        }
-        if (typeof options.mouseup === 'function') {
-          this.addEventListener('mouseup', options.mouseup, false);
-        }
-
-        return this;
-      }
-    },
-
-    setAbsolute: {
-      value: function (bound) {
-        var
-          pos = this.getPosition(bound);
-
-        this.style.left = pos.left + 'px';
-        this.style.top = pos.top + 'px';
-        this.style.position = 'absolute';
-
-        return this;
-      }
     }
   });
 
 
   /* String.prototype */
   Object.defineProperties(String.prototype, {
-    contains: {
-      value: function (substr) {
-        return this.indexOf(substr) > -1;
-      }
-    },
-
-    repeat: {
-      value: function (times, separator) {
-        var i, ln, ret = '';
-        times = typeof times === 'number' ? Math.max(0, times) : 1;
-        separator = separator || '';
-
-        for (i = 0, ln = times; i < ln; i += 1) {
-          ret += this + separator;
-        }
-
-        return ret.substring(0, ret.length - separator.length);
-      }
-    },
-
-    wrapTag: {
-      value: function (tag, indent) {
-        return '<' + tag + '>' + (indent ? ('\n' + '\t'.repeat(indent)) : '') + this + (indent ? '\n' : '') + '</' + tag + '>';
-      }
-    },
-    
     capitalize: {
       value: function () {
         return this.substring(0, 1).toUpperCase() + this.substring(1);
@@ -667,7 +470,7 @@
   Object.defineProperties(Math, {
     randomInt: {
       value: function (min, max) {
-        var r = new Number.Range(min, max);
+        throw new Error('rewrite func');
         return Math.floor(r.min + Math.random() * (r.max - r.min + 1));
       }
     }

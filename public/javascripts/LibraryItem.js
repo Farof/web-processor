@@ -7,7 +7,9 @@
     this.type = type;
     this.in = [];
     this.out = [];
-    this.value = value || '';
+    this.value = value || this.type.defaultValue;
+
+    if (this.type.constructor) this.type.constructor.call(this);
   };
 
   LibraryItem.prototype.serialize = function () {
@@ -23,7 +25,7 @@
   };
 
   LibraryItem.prototype.buildNode = function () {
-    var startX, startY, left, top;
+    var startX, startY, left, top, self = this;
 
     function dragstart(ev) {
       ev.stop();
@@ -50,15 +52,15 @@
 
       node.setLeft(Math.trunc((left + ev.clientX - startX) / node.parentNode.clientWidth * 100));
       node.setTop(Math.trunc((top + ev.clientY - startY) / node.parentNode.clientHeight * 100));
-      wp.Process.save();
+      self.process.save();
     }
 
     function mousedown(ev) {
       if (ev.altKey) {
-        node.wpobj.process.removeItem(node.wpobj);
-      } else if (ev.shiftKey && node.wpobj.type.nout !== 0) {
+        self.process.removeItem(self);
+      } else if (ev.shiftKey && self.type.nout !== 0) {
         ev.stop();
-        node.wpobj.process.canvas.startLink(ev);
+        self.process.canvas.startLink(ev);
       }
     }
 
@@ -70,8 +72,8 @@
       },
       events: {
         mousedown: mousedown,
-        mouseenter: function () { node.wpobj.process.c_conf.hover = node; },
-        mouseleave: function () { node.wpobj.process.c_conf.hover = null; }
+        mouseenter: function () { self.process.c_conf.hover = node; },
+        mouseleave: function () { self.process.c_conf.hover = null; }
       }
     }).adopt(
       new Element('h4', {
@@ -84,7 +86,7 @@
       new Element('div', {
         class: 'content-item-data'
       }).adopt(
-        this.type.build.call(this, this.value)
+        this.type.builder.call(this)
       )
     );
 
@@ -106,12 +108,12 @@
   LibraryItem.prototype.linkTo = function (item) {
     this.out.include(item);
     item.in.include(this);
-    wp.Process.save();
   };
 
   LibraryItem.prototype.destroy = function () {
     this.in.forEach(i => i.out.remove(this));
     this.out.forEach(o => o.in.remove(this));
+    if (this.type.destroyer) this.type.destroyer.call(this);
     delete this.process;
     delete this.type;
     delete this.node.wpobj;
@@ -119,12 +121,16 @@
   };
 
   // library item type
-  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, build }) {
+  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
+    builder, constructor, destroyer, defaultValue }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = nin;
     this.nout = nout;
-    this.build = build;
+    this.builder = builder;
+    this.constructor = constructor;
+    this.destroyer = destroyer;
+    this.defaultValue = defaultValue;
 
     listNode.grab(
       new Element('p', {
@@ -146,16 +152,17 @@
     displayName: 'Text',
     nin: 0,
     nout: -1,
+    defaultValue: '',
 
-    build: function (value) {
+    builder: function () {
       var self = this;
       return new Element('input', {
         type: 'text',
-        value: value,
+        value: this.value,
         events: {
           input: function () {
             self.value = this.value;
-            wp.Process.save();
+            self.process.save();
           }
         }
       })
@@ -168,37 +175,69 @@
     displayName: 'View',
     nin: -1,
     nout: 0,
+    defaultValue: '<none>',
 
-    build: function (value) {
-      var self = this;
-      console.log('value', value);
-      var options = [new Element('option', {
-        value: '<none>',
-        text: '<none>'
-      })].concat(wp.View.items.map(view => {
-        return new Element('option', {
+    constructor: function () {
+      this.viewAdded = function (view) {
+        this.addOption(this.node.$('select'), view);
+      }.bind(this);
+
+      this.viewRemoved = function (view) {
+        console.log('view removed');
+        for (var opt of this.node.$('select').children) {
+          if (opt.value === view.uuid) {
+            opt.unload();
+            break;
+          }
+        }
+      }.bind(this);
+
+      this.addOption = function (select, view) {
+        var opt = new Element('option', {
           value: view.uuid,
           text: view.name
-        })
-      }));
+        });
+
+        if (view.uuid === this.value) {
+          opt.setAttribute('selected', true);
+        }
+
+        wp.addEventListener(view.uuid + ':nameChanged', view => {
+          opt.textContent = view.name;
+        });
+
+        select.grab(opt);
+      }.bind(this);
+
+      wp.addEventListener('View:new', this.viewAdded);
+      wp.addEventListener('View:destroy', this.viewRemoved);
+    },
+
+    destroyer: function () {
+      wp.removeEventListener('View:new', this.viewAdded);
+      wp.removeEventListener('View:destroy', this.viewRemoved);
+    },
+
+    builder: function () {
+      var self = this;
 
       var node = new Element('select', {
         name: 'select',
+        value: this.value,
         events: {
           change: function (ev) {
             self.value = this.value;
-            wp.Process.save();
+            self.process.save();
           }
         }
-      }).adopt(...options);
-      
-      options.match(opt => {
-        console.log(opt, opt.getAttribute('value') === value);
-        return opt.getAttribute('value') === value;
-      });
-      node.selectedIndex = options.indexOf(options.match(opt => opt.getAttribute('value') === value));
-      
-      return node
+      }).grab(new Element('option', {
+        value: '<none>',
+        text: '<none>'
+      }));
+
+      wp.View.items.forEach(view => this.addOption(node, view));
+
+      return node;
     }
   });
 

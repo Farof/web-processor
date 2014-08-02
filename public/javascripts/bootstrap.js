@@ -9,8 +9,8 @@
   };
 
   wp.clearBootstrap = function () {
-    wp.Process.items = [];
-    wp.View.items = [];
+    wp.Process.items.forEach(item => item.destroy());
+    wp.View.items.forEach(item => item.destroy());
     wp.Process.save();
     wp.View.save();
 

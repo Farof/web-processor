@@ -52,7 +52,7 @@
       this.innerHTML = text;
     },
 
-    Absolute: function (bound) {
+    /*Absolute: function (bound) {
       var self = this;
       document.addEventListener('DOMNodeInserted', function setAbsolute(e) {
         self.setAbsolute(bound);
@@ -80,7 +80,7 @@
           bound.appendChild(this);
         }
       })
-    },
+    },/**/
 
     properties: function (properties) {
       var key;
