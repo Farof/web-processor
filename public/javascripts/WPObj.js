@@ -4,7 +4,7 @@
   var WPObjType = wp.WPObjType = function ({ name, defaultItemName, listNode,
     constructor, serializer, loader, contentBuilder }) {
     this.name = name;
-    this.items = [];
+    this.items = new Set();
     this.defaultItemName = defaultItemName;
     this.listNode = listNode;
     this.constructor = constructor;
@@ -14,7 +14,7 @@
   };
 
   WPObjType.prototype.save = function () {
-    localStorage['wp-type-' + this.name] = JSON.stringify(this.items.map(item => item.uuid));
+    localStorage['wp-type-' + this.name] = JSON.stringify(Array.from(this.items).map(item => item.uuid));
   };
 
   WPObjType.prototype.loadAll = function () {
@@ -74,7 +74,7 @@
 
     if (type.constructor) type.constructor.call(this);
 
-    this.type.items.include(this);
+    this.type.items.add(this);
     this.type.save();
     this.save();
     wp.dispatchEvent(this.type.name + ':new', this);
@@ -89,7 +89,7 @@
     if (this.type.destroyer) this.type.destroyer.call(this);
 
     delete localStorage['wp-obj-' + this.uuid];
-    this.type.items.remove(this);
+    this.type.items.delete(this);
     this.type.save();
   };
 
@@ -102,7 +102,7 @@
       uuid: this.uuid,
       type: this.type.name,
       name: this.name,
-      visible: [].findIndex.call($('#content-list').children, child => child.wpobj.uuid === this.uuid) > -1,
+      visible: Array.from($('#content-list').children).findIndex(child => child.wpobj.uuid === this.uuid) > -1,
       minimized: this.contentNode && this.contentNode.classList.contains('minimized')
     }, this.type.serializer ? this.type.serializer.call(this) : {});
 
@@ -117,11 +117,11 @@
     }).adopt(
       new Element('p', { class: 'item-name-line control-container' }).adopt(
         new Element('span', { class: 'item-name', text: this.name, events: {
-          click: function () { self.show(); },
+          click: this.show.bind(this),
           dblclick: edit
         } }),
         new Element('span', { class: 'control-del control', text: '-', events: {
-          click: function () { self.destroy(); }
+          click: this.destroy.bind(this)
         } })
       ),
       new Element('input', {
@@ -143,6 +143,10 @@
             if (node.classList.contains('editing')) {
               node.classList.remove('editing');
               self.name = node.$('input').value;
+              if (!self.initialized) {
+                self.initialized = true;
+                self.show();
+              }
               self.save();
               wp.dispatchEvent(self.uuid + ':nameChanged', self);
             }
@@ -192,6 +196,7 @@
   };
 
   WPObj.prototype.buildContentNode = function () {
+    var self = this;
     var node = this.contentNode = new Element('div', {
       class: this.type.name + '-content content'
     }).adopt(
@@ -202,13 +207,13 @@
         new Element('span', { class: 'control control-min', text: '-', events: {
           click: function min() {
             node.classList.add('minimized');
-            node.wpobj.save();
+            self.save();
           }
         } }),
         new Element('span', { class: 'control control-show', text: '+', events: {
           click: function show() {
             node.classList.remove('minimized');
-            node.wpobj.save();
+            self.save();
           }
         } }),
         new Element('span', { class: 'control control-close', text: 'x', events: {

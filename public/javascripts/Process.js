@@ -7,7 +7,7 @@
     listNode: $('#process-list'),
 
     constructor: function Process_constructor() {
-      this.items = {};
+      this.items = new Map();
 
       this.addItem = function Process_addItem(item, x, y) {
         var node = item.buildNode();
@@ -17,14 +17,14 @@
         node.setTop(y);
 
         item.process = this;
-        this.items[item.uuid] = item;
+        this.items.set(item.uuid, item);
 
         this.save();
       };
 
       this.removeItem = function Process_removeItem(item) {
         item.destroy();
-        delete this.items[item.uuid];
+        this.items.delete(item.uuid);
         this.save();
         this.canvas.update();
       };
@@ -37,10 +37,9 @@
           this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], value: item.value }), item.left, item.top);
         }
 
-        for (var uuid in this.items) {
-          var outs = co[uuid] || [];
-          for (var out of outs) {
-            this.items[uuid].linkTo(this.items[out]);
+        for (var [uuid, item] of this.items) {
+          for (var out of (co[uuid] || [])) {
+            item.linkTo(this.items.get(out));
           }
         }
       };
@@ -48,7 +47,7 @@
 
     serializer: function Process_serializer() {
       return {
-        items: Object.values(this.items).map(item => item.serialize())
+        items: Array.from(this.items.values()).map(item => item.serialize())
       }
     },
 
@@ -148,7 +147,6 @@
         if (target && target !== start && target.wpobj.nin !== 0) {
           // faire un lien entre les objets
           start.wpobj.linkTo(target.wpobj);
-          self.save();
         }
 
         delete c_conf.linkFrom;
@@ -211,8 +209,7 @@
       }
 
       function c_drawLinks() {
-        for (var uuid in self.items) {
-          var item = self.items[uuid];
+        for (var [uuid, item] of self.items) {
           for (var out of item.out) {
             c_drawLink(item.node, out.node);
           }
@@ -240,7 +237,7 @@
       var wrapper = new Element('div', { class: 'content-wrapper' });
       var observer = new MutationObserver(function (mutations) {
         for (var record of mutations) {
-          if ([].contains.call(record.addedNodes, workspace)) {
+          if (Array.from(record.addedNodes).contains(workspace)) {
             window.requestAnimationFrame(function () {
               canvas.width = workspace.offsetWidth;
               canvas.height = workspace.offsetHeight;

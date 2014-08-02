@@ -6,25 +6,26 @@
   };
 
   var wp = this.wp = {
-    events: {},
+    events: new Map(),
 
     addEventListener: function (ev, cb) {
-      if (!this.events[ev]) this.events[ev] = [];
-      this.events[ev].include(cb);
+      var list = this.events.get(ev);
+      if (!list) this.events.set(ev, list = new Set());
+      list.add(cb);
     },
 
     dispatchEvent: function (ev, ...args) {
-      if (this.events[ev]) {
-        for (var cb of this.events[ev]) {
-          cb(...args);
-        }
+      var list = this.events.get(ev);
+      if (list) {
+        for (var cb of list) cb(...args);
       }
     },
 
     removeEventListener: function (ev, cb) {
-      if (this.events[ev]) {
-        if (cb) this.events[ev].remove(cb);
-        else this.events[ev] = [];
+      var list = this.events.get(ev);
+      if (list) {
+        if (cb) list.delete(cb);
+        else list.clear();
       }
     },
 

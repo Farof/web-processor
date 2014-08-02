@@ -5,8 +5,8 @@
   var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value }) {
     this.uuid = _uuid || uuid();
     this.type = type;
-    this.in = [];
-    this.out = [];
+    this.in = new Set();
+    this.out = new Set();
     this.value = value || this.type.defaultValue;
 
     if (this.type.constructor) this.type.constructor.call(this);
@@ -16,8 +16,8 @@
     return {
       uuid: this.uuid,
       type: this.type.name,
-      // in: this.in.map(i => i.uuid),
-      out: this.out.map(o => o.uuid),
+      // in: Array.from(this.in).map(i => i.uuid),
+      out: Array.from(this.out).map(o => o.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
       value: this.value
@@ -28,6 +28,7 @@
     var startX, startY, left, top, self = this;
 
     function dragstart(ev) {
+      if (ev.shiftKey) return;
       ev.stop();
 
       node.parentNode.grab(node);
@@ -106,13 +107,14 @@
   };
 
   LibraryItem.prototype.linkTo = function (item) {
-    this.out.include(item);
-    item.in.include(this);
+    this.out.add(item);
+    item.in.add(this);
+    this.process.save();
   };
 
   LibraryItem.prototype.destroy = function () {
-    this.in.forEach(i => i.out.remove(this));
-    this.out.forEach(o => o.in.remove(this));
+    this.in.forEach(i => i.out.delete(this));
+    this.out.forEach(o => o.in.delete(this));
     if (this.type.destroyer) this.type.destroyer.call(this);
     delete this.process;
     delete this.type;
@@ -183,7 +185,6 @@
       }.bind(this);
 
       this.viewRemoved = function (view) {
-        console.log('view removed');
         for (var opt of this.node.$('select').children) {
           if (opt.value === view.uuid) {
             opt.unload();
