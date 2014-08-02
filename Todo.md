@@ -9,3 +9,6 @@
 - process reset if error while creation
 - order input
 - make algorithme to update only the neccessary items when updating process
+- message indicating why an item is failing
+- warn when input reaches output from 2 different paths
+- item alignement help

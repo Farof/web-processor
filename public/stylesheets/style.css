@@ -184,6 +184,10 @@ a {
   flex: auto;
 }
 
+.content-item-data p {
+  margin: 2px 0;
+}
+
 .content-wrapper {
   position: relative;
 }

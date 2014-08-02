@@ -10,6 +10,13 @@
     this.value = value || this.type.defaultValue;
 
     if (this.type.constructor) this.type.constructor.call(this);
+
+    wp.addEventListener(this.uuid + ':valueChanged', newValue => {
+      this.oldValue = this.value;
+      this.value = newValue;
+      this.update();
+      this.process.save();
+    });
   };
 
   LibraryItem.prototype.serialize = function () {
@@ -73,7 +80,10 @@
       },
       events: {
         mousedown: mousedown,
-        mouseenter: function () { self.process.c_conf.hover = node; },
+        mouseenter: function () {
+          self.process.c_conf.hover = node;
+          console.log(self.value);
+        },
         mouseleave: function () { self.process.c_conf.hover = null; }
       }
     }).adopt(
@@ -141,9 +151,9 @@
   LibraryItem.prototype.validate = function () {
     var success = true;
 
-    if (this.type.nin !== 0 && !this.in.size) success = false;
+    if (this.type.validator && !this.type.validator.call(this)) success = false;
+    else if (this.type.nin !== 0 && !this.in.size) success = false;
     else if (this.type.nout !== 0 && !this.out.size) success = false;
-    else if (this.type.validator && !this.type.validator.call(this)) success = false;
 
     if (success) this.node.classList.add('success');
     else this.node.classList.remove('success');
@@ -177,7 +187,11 @@
     );
   };
 
-  var TextInput = LibraryType.TextInput = new LibraryType({
+  /************* TYPES *************/
+
+  /***** INPUTS *****/
+
+  LibraryType.TextInput = new LibraryType({
     listNode: $('#library-inputs'),
     name: 'TextInput',
     displayName: 'Text',
@@ -192,16 +206,47 @@
         value: this.value,
         events: {
           input: function () {
-            self.value = this.value;
-            self.update();
-            self.process.save();
+            wp.dispatchEvent(self.uuid + ':valueChanged', this.value);
           }
         }
       })
     }
   });
 
-  var ViewOutput = LibraryType.ViewOutput = new LibraryType({
+  /***** OPERATORS *****/
+
+  LibraryType.UpperCaseOperator = new LibraryType({
+    listNode: $('#library-operators'),
+    name: 'UpperCaseOperator',
+    displayName: 'UpperCase',
+    nin: -1,
+    nout: -1,
+    defaultValue: '',
+
+    builder: function () {
+      return [
+        new Element('p', { text: 'In: '}).adopt(new Element('span', { class: 'item-in-count', text: 0 })),
+        new Element('p', { text: 'Out: '}).adopt(new Element('span', { class: 'item-out-count', text: 0 }))
+      ];
+    },
+
+    updater: function () {
+      this.value = [];
+      for (var i of this.in) {
+        this.value.push(String(i.value).toUpperCase());
+      }
+    },
+
+    validator: function () {
+      this.node.$('.item-in-count').textContent = this.in.size;
+      this.node.$('.item-out-count').textContent = this.out.size;
+      return true;
+    }
+  });
+
+  /***** OUTPUTS *****/
+
+  LibraryType.ViewOutput = new LibraryType({
     listNode: $('#library-outputs'),
     name: 'ViewOutput',
     displayName: 'View',
@@ -215,9 +260,13 @@
       }.bind(this);
 
       this.viewRemoved = function (view) {
-        for (var opt of this.node.$('select').children) {
+        var select = this.node.$('select'), oldValue = select.value;
+        for (var opt of select.children) {
           if (opt.value === view.uuid) {
             opt.unload();
+            if (select.value !== oldValue) {
+              wp.dispatchEvent(this.uuid + ':valueChanged', select.value);
+            }
             break;
           }
         }
@@ -258,9 +307,7 @@
         value: this.value,
         events: {
           change: function (ev) {
-            self.value = this.value;
-            self.update();
-            self.process.save();
+            wp.dispatchEvent(self.uuid + ':valueChanged', this.value);
           }
         }
       }).grab(new Element('option', {
@@ -274,12 +321,21 @@
     },
 
     updater: function () {
-      var view = wp.View.items.get(this.value);
-      if (view) {
+      var view;
+      if (view = wp.View.items.get(this.value)) {
         view.workspace.empty();
         for (var i of this.in) {
-          view.workspace.grab(new Element('p', { text: i.value }));
+          // action depending type of in and type of value
+          if (Array.isArray(i.value)) {
+            for (var val of i.value) {
+              view.workspace.grab(new Element('p', { text: val }));
+            }
+          } else {
+            view.workspace.grab(new Element('p', { text: i.value }));
+          }
         }
+      } else if (view = wp.View.items.get(this.oldValue)) {
+        view.workspace.empty();
       }
     },
 
