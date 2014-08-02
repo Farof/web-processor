@@ -14,6 +14,7 @@
   };
 
   WPObjType.prototype.save = function () {
+    if (!wp.initialized) return;
     localStorage['wp-type-' + this.name] = JSON.stringify(Array.from(this.items.values()).map(item => item.uuid));
   };
 
@@ -95,6 +96,7 @@
   };
 
   WPObj.prototype.save = function () {
+    if (!wp.initialized) return;
     localStorage['wp-obj-' + this.uuid] = JSON.stringify(this.serialize());
   };
 

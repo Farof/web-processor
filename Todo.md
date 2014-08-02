@@ -6,9 +6,9 @@
 - arrow at end of link
 - grey element if not a suitable target
 - server-side save
-- process reset if error while creation
 - order input
 - make algorithme to update only the neccessary items when updating process
 - message indicating why an item is failing
 - warn when input reaches output from 2 different paths
 - item alignement help
+- make the app headless, able to operate without ui, in browser or node
