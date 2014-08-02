@@ -4,7 +4,7 @@
   var WPObjType = wp.WPObjType = function ({ name, defaultItemName, listNode,
     constructor, serializer, loader, contentBuilder }) {
     this.name = name;
-    this.items = new Set();
+    this.items = new Map();
     this.defaultItemName = defaultItemName;
     this.listNode = listNode;
     this.constructor = constructor;
@@ -14,7 +14,7 @@
   };
 
   WPObjType.prototype.save = function () {
-    localStorage['wp-type-' + this.name] = JSON.stringify(Array.from(this.items).map(item => item.uuid));
+    localStorage['wp-type-' + this.name] = JSON.stringify(Array.from(this.items.values()).map(item => item.uuid));
   };
 
   WPObjType.prototype.loadAll = function () {
@@ -74,7 +74,8 @@
 
     if (type.constructor) type.constructor.call(this);
 
-    this.type.items.add(this);
+    this.type.items.set(this.uuid, this);
+    this.buildContentNode();
     this.type.save();
     this.save();
     wp.dispatchEvent(this.type.name + ':new', this);
@@ -89,7 +90,7 @@
     if (this.type.destroyer) this.type.destroyer.call(this);
 
     delete localStorage['wp-obj-' + this.uuid];
-    this.type.items.delete(this);
+    this.type.items.delete(this.uuid);
     this.type.save();
   };
 
@@ -230,6 +231,7 @@
       node.$('.item-name').textContent = obj.name;
     });
 
+    this.workspace = node.$('.content-workspace');
     if (this.type.contentBuilder) node = this.type.contentBuilder.call(this, node);
 
     node.wpobj = this;

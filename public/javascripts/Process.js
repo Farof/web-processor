@@ -11,7 +11,7 @@
 
       this.addItem = function Process_addItem(item, x, y) {
         var node = item.buildNode();
-        this.contentNode.$('.content-workspace').grab(node);
+        this.workspace.grab(node);
 
         node.setLeft(x);
         node.setTop(y);
@@ -41,6 +41,14 @@
           for (var out of (co[uuid] || [])) {
             item.linkTo(this.items.get(out));
           }
+        }
+
+        this.update();
+      };
+
+      this.update = function () {
+        for (var [uuid, item] of this.items) {
+          item.update();
         }
       };
     },
@@ -118,7 +126,7 @@
 
       function c_update(ev) {
         c_clear();
-        if (c_conf.cursor.in) c_cursor();
+        // if (c_conf.cursor.in) c_cursor();
         if (c_conf.linkFrom) c_drawNewLink(ev);
         c_drawLinks(ev);
       }
@@ -143,13 +151,12 @@
         document.removeEventListener('mouseup', c_stopLink);
 
         var start = c_conf.linkFrom, target = c_conf.hover;
-        if (target && target !== start && target.wpobj.nin !== 0) {
-          // faire un lien entre les objets
+        if (target && target !== start && target.wpobj.type.nin !== 0) {
           start.wpobj.linkTo(target.wpobj);
         }
 
         delete c_conf.linkFrom;
-        
+
         c_update();
       }
 
@@ -270,8 +277,7 @@
         }
       }
 
-      var workspace = node.$('.content-workspace');
-      workspace.addEvents({
+      this.workspace.addEvents({
         mousedown: mousedown,
         mousemove: mousemove,
         mouseleave: mouseleave,
@@ -292,10 +298,10 @@
       var wrapper = new Element('div', { class: 'content-wrapper' });
       var observer = new MutationObserver(function (mutations) {
         for (var record of mutations) {
-          if (Array.from(record.addedNodes).contains(workspace)) {
+          if (Array.from(record.addedNodes).contains(self.workspace)) {
             window.requestAnimationFrame(function () {
-              canvas.width = workspace.offsetWidth;
-              canvas.height = workspace.offsetHeight;
+              canvas.width = self.workspace.offsetWidth;
+              canvas.height = self.workspace.offsetHeight;
               c_update();
             });
 
@@ -307,14 +313,14 @@
 
       window.addEventListener('resize', function () {
         window.requestAnimationFrame(function () {
-          canvas.width = workspace.offsetWidth;
-          canvas.height = workspace.offsetHeight;
+          canvas.width = self.workspace.offsetWidth;
+          canvas.height = self.workspace.offsetHeight;
         });
       });
 
       node.grab(
         wrapper.adopt(
-          workspace,
+          self.workspace,
           canvas
         )
       );

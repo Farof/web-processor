@@ -109,12 +109,16 @@
   LibraryItem.prototype.linkTo = function (item) {
     this.out.add(item);
     item.in.add(this);
+    item.update();
+    this.validate();
     this.process.save();
   };
 
   LibraryItem.prototype.removeLinkTo = function (item) {
     this.out.delete(item);
     item.in.delete(this);
+    item.update();
+    this.validate();
     this.process.save();
   };
 
@@ -128,9 +132,26 @@
     this.node.unload();
   };
 
+  LibraryItem.prototype.update = function () {
+    if (this.type.updater) this.type.updater.call(this);
+    this.validate();
+    for (var out of this.out) out.update();
+  };
+
+  LibraryItem.prototype.validate = function () {
+    var success = true;
+
+    if (this.type.nin !== 0 && !this.in.size) success = false;
+    else if (this.type.nout !== 0 && !this.out.size) success = false;
+    else if (this.type.validator && !this.type.validator.call(this)) success = false;
+
+    if (success) this.node.classList.add('success');
+    else this.node.classList.remove('success');
+  };
+
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
-    builder, constructor, destroyer, defaultValue }) {
+    builder, constructor, destroyer, updater, validator, defaultValue }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = nin;
@@ -138,6 +159,8 @@
     this.builder = builder;
     this.constructor = constructor;
     this.destroyer = destroyer;
+    this.updater = updater;
+    this.validator = validator;
     this.defaultValue = defaultValue;
 
     listNode.grab(
@@ -170,6 +193,7 @@
         events: {
           input: function () {
             self.value = this.value;
+            self.update();
             self.process.save();
           }
         }
@@ -205,13 +229,14 @@
           text: view.name
         });
 
-        if (view.uuid === this.value) {
-          opt.setAttribute('selected', true);
-        }
-
         wp.addEventListener(view.uuid + ':nameChanged', view => {
           opt.textContent = view.name;
         });
+
+        if (view.uuid === this.value) {
+          opt.setAttribute('selected', true);
+          this.update();
+        }
 
         select.grab(opt);
       }.bind(this);
@@ -234,6 +259,7 @@
         events: {
           change: function (ev) {
             self.value = this.value;
+            self.update();
             self.process.save();
           }
         }
@@ -245,6 +271,20 @@
       wp.View.items.forEach(view => this.addOption(node, view));
 
       return node;
+    },
+
+    updater: function () {
+      var view = wp.View.items.get(this.value);
+      if (view) {
+        view.workspace.empty();
+        for (var i of this.in) {
+          view.workspace.grab(new Element('p', { text: i.value }));
+        }
+      }
+    },
+
+    validator: function () {
+      return this.value !== this.type.defaultValue;
     }
   });
 

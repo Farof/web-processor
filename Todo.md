@@ -7,3 +7,5 @@
 - grey element if not a suitable target
 - server-side save
 - process reset if error while creation
+- order input
+- make algorithme to update only the neccessary items when updating process

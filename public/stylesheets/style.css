@@ -146,6 +146,7 @@ a {
   background: white;
   border: 1px solid var(--main-border-color);
   border-radius: 5px 5px 0 0;
+  box-shadow: 0px 0px 2px red;
   cursor: auto;
   display: flex;
   flex-direction: column;
@@ -154,7 +155,14 @@ a {
 }
 
 .content-item:hover {
-    box-shadow: 0px 0px 2px #808080;
+  box-shadow: 0px 0px 4px red;
+}
+
+.content-item.success {
+  box-shadow: 0px 0px 2px green;
+}
+.content-item.success:hover {
+  box-shadow: 0px 0px 4px green;
 }
 
 .content-item > h4 {
