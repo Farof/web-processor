@@ -54,7 +54,7 @@
     loader: function Process_loader(data) {
       this.loadItems(data.items);
     },
-    
+
     destroyer: function Process_destroyer() {
       this.items.forEach(item => item.destroy());
     },
@@ -88,12 +88,19 @@
         );
       }
 
+      function mousedown(ev) {
+        if (ev.altKey && c_conf.hoverLink) {
+          c_conf.hoverLink.source.wpobj.removeLinkTo(c_conf.hoverLink.target.wpobj);
+          c_update();
+        }
+      }
+
       function mousemove(ev) {
         var pos = canvas.getBoundingClientRect();
 
         c_conf.cursor.in = true;
-        c_conf.cursor.x = ev.clientX - pos.x;
-        c_conf.cursor.y = ev.clientY - pos.y;
+        c_conf.cursor.x = Math.round(ev.clientX - pos.x);
+        c_conf.cursor.y = Math.round(ev.clientY - pos.y);
 
         c_update(ev);
       }
@@ -113,19 +120,11 @@
         c_clear();
         if (c_conf.cursor.in) c_cursor();
         if (c_conf.linkFrom) c_drawNewLink(ev);
-        c_drawLinks();
+        c_drawLinks(ev);
       }
 
       function c_clear() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-
-      function c_cursor(x, y) {
-        ctx.strokeStyle = 'grey';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(c_conf.cursor.x, c_conf.cursor.y, 5, 0, 2 * Math.PI, false);
-        ctx.stroke();
       }
 
       function c_startLink(ev) {
@@ -150,6 +149,8 @@
         }
 
         delete c_conf.linkFrom;
+        
+        c_update();
       }
 
       function c_getLinkInfo(at, ar, ab, al, bt, br, bb, bl) {
@@ -169,7 +170,62 @@
         }
       }
 
-      function c_drawLink(source, target) {
+      function c_applyConf(conf) {
+        for (var key in conf) {
+          ctx[key] = conf[key];
+        }
+      }
+
+      function c_pointInPath() {
+        return c_conf.cursor.in && ctx.isPointInStroke(c_conf.cursor.x, c_conf.cursor.y);
+      }
+
+      function c_drawCircle(x, y, r, conf, stroke, fill) {
+        c_applyConf(conf);
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, 2 * Math.PI, false);
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+        ctx.closePath();
+
+        return c_pointInPath();
+      }
+
+      function c_drawLine(x, y, xx, yy, conf, stroke, fill) {
+        c_applyConf(conf);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(xx, yy);
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+        ctx.closePath();
+
+        return c_pointInPath();
+      }
+
+      function c_cursor() {
+        c_drawCircle(c_conf.cursor.x, c_conf.cursor.y, 5, {
+          strokeStyle: 'grey',
+          lineWidth: 1
+        }, true);
+      }
+
+      function c_link(x, y, xx, yy, a) {
+        var hover;
+
+        hover = c_drawCircle(x, y, 4, {
+          strokeStyle: 'black',
+          fillStyle: 'black'
+        }, true, true) || hover;
+
+        hover = c_drawLine(x, y, xx, yy, {
+          lineWidth: 3
+        }, true, true) || hover;
+
+        return hover;
+      }
+
+      function c_drawLink(source, target, ev) {
         var { a, dir, x, y, xx, yy } = c_getLinkInfo(
           source.offsetTop, source.offsetLeft + source.offsetWidth,
           source.offsetTop + source.offsetHeight, source.offsetLeft,
@@ -177,19 +233,17 @@
           target.offsetTop + target.offsetHeight, target.offsetLeft
         );
 
-        ctx.strokeStyle = 'black';
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI, false);
-        ctx.stroke();
-        ctx.fill();
+        // if hover link, set variables and redraw with blur
+        if (c_link(x, y, xx, yy, a) && !c_conf.linkFrom) {
+          var { shadowBlur, shadowColor } = ctx;
+          c_conf.hoverLink = { source: source, target: target };
 
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(xx, yy);
-        ctx.fill();
-        ctx.stroke();
+          c_applyConf({ shadowBlur: 3, shadowColor: 'red' });
+          c_link(x, y, xx, yy, a);
+          c_applyConf({ shadowBlur: shadowBlur, shadowColor: shadowColor });
+        } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
+          delete c_conf.hoverLink;
+        }
       }
 
       function c_drawNewLink(ev) {
@@ -205,19 +259,20 @@
           };
         }
 
-        c_drawLink(c_conf.linkFrom, target);
+        c_drawLink(c_conf.linkFrom, target, ev);
       }
 
-      function c_drawLinks() {
+      function c_drawLinks(ev) {
         for (var [uuid, item] of self.items) {
           for (var out of item.out) {
-            c_drawLink(item.node, out.node);
+            c_drawLink(item.node, out.node, ev);
           }
         }
       }
 
       var workspace = node.$('.content-workspace');
       workspace.addEvents({
+        mousedown: mousedown,
         mousemove: mousemove,
         mouseleave: mouseleave,
         dragenter: dragenter,

@@ -112,6 +112,12 @@
     this.process.save();
   };
 
+  LibraryItem.prototype.removeLinkTo = function (item) {
+    this.out.delete(item);
+    item.in.delete(this);
+    this.process.save();
+  };
+
   LibraryItem.prototype.destroy = function () {
     this.in.forEach(i => i.out.delete(this));
     this.out.forEach(o => o.in.delete(this));

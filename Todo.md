@@ -6,5 +6,4 @@
 - arrow at end of link
 - grey element if not a suitable target
 - server-side save
-- destroy link
-- multiple input / output
+- process reset if error while creation
