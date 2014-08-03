@@ -9,17 +9,16 @@
     constructor: function Process_constructor() {
       this.items = new Map();
 
-      this.addItem = function Process_addItem(item, x, y) {
+      this.addItem = function Process_addItem(item) {
         var node = item.buildNode();
         this.workspace.grab(node);
-
-        node.setLeft(x);
-        node.setTop(y);
 
         item.process = this;
         this.items.set(item.uuid, item);
 
         this.save();
+
+        return item;
       };
 
       this.removeItem = function Process_removeItem(item) {
@@ -34,7 +33,8 @@
 
         for (var item of items) {
           co[item.uuid] = item.out;
-          this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], value: item.value }), item.left, item.top);
+          this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], value: item.value }))
+              .node.setLeft(item.left).setTop(item.top);
         }
 
         for (var [uuid, item] of this.items) {
@@ -86,14 +86,13 @@
         var item = new wp.LibraryItem({
           type: wp.LibraryType[ev.dataTransfer.getData('application/x-wp-library-item')]
         });
-        var n = item.buildNode();
-        var pos = ev.target.getBoundingClientRect();
+        var pos = self.workspace.getBoundingClientRect();
 
-        self.addItem(
-          item,
-          (ev.clientX - pos.x - n.clientWidth / 2) / pos.width * 100,
-          (ev.clientY - pos.y - n.$('h4').offsetHeight / 2) / pos.height * 100
-        );
+        var node = self.addItem(item).node;
+        node.setLeft(Math.trunc((ev.clientX - pos.left - node.clientWidth / 2) / pos.width * 100))
+            .setTop(Math.trunc((ev.clientY - pos.top - node.$('h4').offsetHeight / 2) / pos.height * 100));
+
+        self.save();
       }
 
       function mousedown(ev) {

@@ -35,7 +35,7 @@
     var startX, startY, left, top, self = this;
 
     function dragstart(ev) {
-      if (ev.shiftKey) return;
+      if (ev.shiftKey || ev.altKey) return;
       ev.stop();
 
       node.parentNode.grab(node);
@@ -103,12 +103,14 @@
 
     node.setLeft = function (left) {
       var w = node.parentNode.clientWidth;
-      this.style.left = Math.min(Math.max(left, 0), (w - node.clientWidth) / w * 100) + '%';
+      this.style.left = Math.min(Math.max(left, 0), Math.trunc((w - node.clientWidth) / w * 100)) + '%';
+      return this;
     };
 
     node.setTop = function (top) {
       var h = node.parentNode.clientHeight;
-      this.style.top = Math.min(Math.max(top, 0), (h - node.offsetHeight) / h * 100) + '%';
+      this.style.top = Math.min(Math.max(top, 0), Math.trunc((h - node.offsetHeight) / h * 100)) + '%';
+      return this;
     };
 
     node.wpobj = this;
