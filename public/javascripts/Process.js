@@ -115,19 +115,47 @@
         }
       }
 
-      function mousemove(ev) {
+      function mouse_update(ev) {
         var pos = canvas.getBoundingClientRect();
 
-        c_conf.cursor.in = true;
         c_conf.cursor.x = Math.round(ev.clientX - pos.x);
         c_conf.cursor.y = Math.round(ev.clientY - pos.y);
+        c_conf.cursor.ev = ev;
+      }
 
+      function mouseenter(ev) {
+        document.addEventListener('keydown', keydown);
+        document.addEventListener('keyup', keyup);
+        c_conf.cursor.in = true;
+        mouse_update(ev);
+        c_update(ev);
+      }
+
+      function mousemove(ev) {
+        c_conf.cursor.in = true;
+        mouse_update(ev);
         c_update(ev);
       }
 
       function mouseleave(ev) {
+        document.removeEventListener('keydown', keydown);
+        document.removeEventListener('keyup', keyup);
         c_conf.cursor.in = false;
         c_update();
+      }
+
+      function keydown(ev) {
+        if (c_conf.cursor.ev.shiftKey !== ev.shiftKey && c_conf.hoverLink) {
+          c_conf.cursor.ev = ev;
+          c_update(ev);
+        }
+      }
+
+      function keyup(ev) {
+        if (c_conf.cursor.ev.shiftKey !== ev.shiftKey && c_conf.hoverLink) {
+          c_conf.cursor.ev = ev;
+          c_update(ev);
+        }
       }
 
       var c_conf = this.c_conf = {
@@ -232,7 +260,7 @@
       function c_link(x, y, xx, yy, a) {
         var hover;
 
-        hover = c_drawCircle(x, y, 4, {
+        hover = c_drawCircle(x, y, 3, {
           strokeStyle: 'black',
           fillStyle: 'black'
         }, true, true) || hover;
@@ -257,7 +285,7 @@
           var { shadowBlur, shadowColor } = ctx;
           c_conf.hoverLink = { source: source, target: target };
 
-          c_applyConf({ shadowBlur: 3, shadowColor: 'red' });
+          c_applyConf({ shadowBlur: 3, shadowColor: c_conf.cursor.ev.shiftKey ? 'red' : 'black' });
           c_link(x, y, xx, yy, a);
           c_applyConf({ shadowBlur: shadowBlur, shadowColor: shadowColor });
         } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
@@ -291,6 +319,7 @@
 
       this.workspace.addEvents({
         mousedown: mousedown,
+        mouseenter: mouseenter,
         mousemove: mousemove,
         mouseleave: mouseleave,
         dragenter: dragenter,
