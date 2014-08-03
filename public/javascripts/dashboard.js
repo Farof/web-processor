@@ -5,8 +5,9 @@
     return document.querySelector(selector);
   };
 
-  var wp = this.wp = {
+  var wp = exports.wp = {
     initialized: false,
+    proxyURL: '/proxy?url=',
 
     events: new Map(),
 

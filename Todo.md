@@ -17,3 +17,5 @@
 - position collapse if reload when process is closed
 - export / import process
 - identify library item type by uuid to ensure process integrity if an item is renamed
+- don't redraw canvas on every mousemove
+- don't save operators value

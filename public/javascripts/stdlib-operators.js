@@ -55,15 +55,43 @@
       if (this.value === '') this.value = [];
     },
 
-    /*builder: function () {
-
-    },*/
-
     updater: function () {
       this.value = Array.from(this.in).reduce((a, b) => a.concat(b.value), []).sort((a, b) => {
         return a.toLowerCase() > b.toLowerCase();
       });
     }
   });
+
+  wp.LibraryType.RequestXML = new wp.LibraryType({
+    listNode: node,
+    name: 'RequestXML',
+    displayName: 'Request XML',
+    nin: 1,
+    nout: -1,
+    defaultValue: '',
+
+    updater: function () {
+      // handle 400, 500, 502
+      if (this.in.size > 0) {
+        var url = this.in.values().next().value.value;
+        console.log('request: ', url);
+
+        if (this.request) {
+          this.request.abort();
+        }
+
+        var { xhr, promise } = XHR.getXML(wp.proxyURL + url);
+        this.request = xhr;
+
+        return promise.then(xml => {
+          delete this.request;
+          wp.dispatchEvent(this.uuid + ':value:changed', xml);
+        }, err => {
+          delete this.request;
+          console.log('handle getXML error: ', err);
+        });
+      }
+    }
+  })
 
 })(this);

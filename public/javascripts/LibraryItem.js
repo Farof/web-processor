@@ -87,7 +87,7 @@
         mousedown: mousedown,
         mouseenter: function () {
           self.process.c_conf.hover = node;
-          console.log(self.value);
+          // console.log(self.value);
         },
         mouseleave: function () { self.process.c_conf.hover = null; }
       }
@@ -149,10 +149,18 @@
   };
 
   LibraryItem.prototype.update = function (manual) {
-    if (this.type.updater && (this.process.autoexec || manual)) this.type.updater.call(this, manual);
-    this.validate();
-    if (this.process.autoexec || manual) {
-      for (var out of this.out) out.update(manual);
+    var p;
+    if (this.type.updater && (this.process.autoexec || manual)) p = this.type.updater.call(this, manual);
+
+    if (this.validate() && (this.process.autoexec || manual)) {
+      if (p) {
+        console.log(this.process.autoexec, manual);
+        p.then(() => {
+          for (var out of this.out) out.update(manual);
+        })
+      } else {
+        for (var out of this.out) out.update(manual);
+      }
     }
   };
 
@@ -165,6 +173,8 @@
 
     if (success) this.node.classList.add('success');
     else this.node.classList.remove('success');
+
+    return success;
   };
 
   // library item type

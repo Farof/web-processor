@@ -257,7 +257,7 @@
         }, true);
       }
 
-      function c_link(x, y, xx, yy, a) {
+      function c_link(x, y, xx, yy, a, dir) {
         var hover;
 
         hover = c_drawCircle(x, y, 3, {
@@ -281,12 +281,12 @@
         );
 
         // if hover link, set variables and redraw with blur
-        if (c_link(x, y, xx, yy, a) && !c_conf.linkFrom) {
+        if (c_link(x, y, xx, yy, a, dir) && !c_conf.linkFrom) {
           var { shadowBlur, shadowColor } = ctx;
           c_conf.hoverLink = { source: source, target: target };
 
           c_applyConf({ shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
-          c_link(x, y, xx, yy, a);
+          c_link(x, y, xx, yy, a, dir);
           c_applyConf({ shadowBlur: shadowBlur, shadowColor: shadowColor });
         } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
           delete c_conf.hoverLink;
