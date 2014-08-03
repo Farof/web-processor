@@ -75,6 +75,7 @@
           wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
         });
 
+        this.node.classList.remove('empty');
         this.initialized = true;
       }
     }
@@ -196,13 +197,6 @@
     nout: -1,
     defaultValue: '',
 
-    builder: function () {
-      return [
-        new Element('p', { text: 'In: '}).adopt(new Element('span', { class: 'item-in-count', text: 0 })),
-        new Element('p', { text: 'Out: '}).adopt(new Element('span', { class: 'item-out-count', text: 0 }))
-      ];
-    },
-
     updater: function () {
       this.value = [];
       for (var i of this.in) {
@@ -210,12 +204,6 @@
           this.value.push(String(value).toLowerCase());
         }
       }
-    },
-
-    validator: function () {
-      this.node.$('.item-in-count').textContent = this.in.size;
-      this.node.$('.item-out-count').textContent = this.out.size;
-      return true;
     }
   });
 
@@ -227,13 +215,6 @@
     nout: -1,
     defaultValue: '',
 
-    builder: function () {
-      return [
-        new Element('p', { text: 'In: '}).adopt(new Element('span', { class: 'item-in-count', text: 0 })),
-        new Element('p', { text: 'Out: '}).adopt(new Element('span', { class: 'item-out-count', text: 0 }))
-      ];
-    },
-
     updater: function () {
       this.value = [];
       for (var i of this.in) {
@@ -241,12 +222,6 @@
           this.value.push(String(value).toUpperCase());
         }
       }
-    },
-
-    validator: function () {
-      this.node.$('.item-in-count').textContent = this.in.size;
-      this.node.$('.item-out-count').textContent = this.out.size;
-      return true;
     }
   });
 
