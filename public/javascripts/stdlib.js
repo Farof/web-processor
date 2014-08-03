@@ -267,7 +267,9 @@
     },*/
 
     updater: function () {
-      this.value = Array.from(this.in).reduce((a, b) => a.concat(b.value), []).sort();
+      this.value = Array.from(this.in).reduce((a, b) => a.concat(b.value), []).sort((a, b) => {
+        return a.toLowerCase() > b.toLowerCase();
+      });
     }
   });
 
