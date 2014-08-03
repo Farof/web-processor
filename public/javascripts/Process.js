@@ -296,7 +296,7 @@
       function c_drawNewLink(ev) {
         var target = c_conf.hover;
 
-        if (!target || target === c_conf.linkFrom || target.wpobj.nin === 0) {
+        if (!target || target === c_conf.linkFrom || target.wpobj.type.nin === 0) {
           var pos = canvas.getBoundingClientRect();
           target = {
             offsetLeft: ev.clientX - pos.left,
