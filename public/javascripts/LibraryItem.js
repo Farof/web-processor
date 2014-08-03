@@ -8,6 +8,7 @@
     this.in = new Set();
     this.out = new Set();
     this.value = value || this.type.defaultValue;
+    this.initialized = false;
 
     if (this.type.constructor) this.type.constructor.call(this);
 
@@ -72,6 +73,10 @@
       }
     }
 
+    this.dataNode = new Element('div', {
+      class: 'content-item-data'
+    });
+
     var node = this.node = new Element('div', {
       class: 'content-item',
       style: {
@@ -94,11 +99,7 @@
         }
       }),
 
-      new Element('div', {
-        class: 'content-item-data'
-      }).adopt(
-        this.type.builder ? this.type.builder.call(this) : []
-      )
+      this.dataNode
     );
 
     node.setLeft = function (left) {
@@ -113,7 +114,8 @@
       return this;
     };
 
-    this.dataNode = node.$('.content-item-data');
+    if (this.type.builder) this.dataNode.adopt(this.type.builder.call(this));
+
     node.wpobj = this;
 
     return node;

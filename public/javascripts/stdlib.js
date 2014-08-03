@@ -13,10 +13,6 @@
     nout: 0,
     defaultValue: null,
 
-    constructor: function () {
-      this.initialized = false;
-    },
-
     destroyer: function () {
       for (var [name, type] of this.process.conf) {
         wp.removeEventListener([this.process.uuid, name, 'changed'].join(':'), this['update' + name.capitalize()]);
@@ -129,6 +125,67 @@
     }
   });
 
+  LibraryType.ListInput = new LibraryType({
+    listNode: $('#library-inputs'),
+    name: 'ListInput',
+    displayName: 'List',
+    nin: 0,
+    nout: -1,
+    defaultValue: '',
+
+    constructor: function () {
+      var self = this;
+      if (this.value === '') this.value = [];
+
+      this.buildInput = str => {
+        return new Element('p').adopt(
+          new Element('input', {
+            class: 'list-item',
+            value: str || '',
+            events: {
+              input: function () {
+                self.value = Array.from(self.dataNode.$$('.list-item')).map(input => input.value);
+                wp.dispatchEvent(self.uuid + ':value:changed', self.value);
+              }
+            }
+          }),
+
+          new Element('button', {
+            text: 'delete',
+            events: {
+              click: function () {
+                this.parentNode.unload();
+                self.process.canvas.update();
+                self.value = Array.from(self.dataNode.$$('.list-item')).map(input => input.value);
+                wp.dispatchEvent(self.uuid + ':value:changed', self.value);
+              }
+            }
+          })
+        );
+      };
+
+      this.add = str => {
+        var i = this.buildInput();
+        this.dataNode.grab(i);
+        this.process.canvas.update();
+        i.$('.list-item').focus();
+      };
+    },
+
+    builder: function () {
+      var self = this;
+      console.log(this.value);
+      return [
+        new Element('button', {
+          text: 'add',
+          events: {
+            click: function () { self.add(); }
+          }
+        })
+      ].concat(this.value.map(this.buildInput));
+    }
+  });
+
   /***** OPERATORS *****/
 
   LibraryType.LowerCaseOperator = new LibraryType({
@@ -149,7 +206,9 @@
     updater: function () {
       this.value = [];
       for (var i of this.in) {
-        this.value.push(String(i.value).toLowerCase());
+        for (var value of Array.from(i.value)) {
+          this.value.push(String(value).toLowerCase());
+        }
       }
     },
 
@@ -178,7 +237,9 @@
     updater: function () {
       this.value = [];
       for (var i of this.in) {
-        this.value.push(String(i.value).toUpperCase());
+        for (var value of Array.from(i.value)) {
+          this.value.push(String(value).toUpperCase());
+        }
       }
     },
 

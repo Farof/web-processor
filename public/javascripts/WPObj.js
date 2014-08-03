@@ -97,7 +97,13 @@
 
   WPObj.prototype.save = function () {
     if (!wp.initialized) return;
-    localStorage['wp-obj-' + this.uuid] = JSON.stringify(this.serialize());
+    try {
+      localStorage['wp-obj-' + this.uuid] = JSON.stringify(this.serialize());
+    } catch (err) {
+      console.log('failed to save ' + this.name + ' -- ' + this.uuid);
+      console.log(err);
+      console.log(this.serialize());
+    }
   };
 
   WPObj.prototype.serialize = function () {
