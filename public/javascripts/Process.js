@@ -145,14 +145,14 @@
       }
 
       function keydown(ev) {
-        if (c_conf.cursor.ev.shiftKey !== ev.shiftKey && c_conf.hoverLink) {
+        if (c_conf.cursor.ev.altKey !== ev.altKey && c_conf.hoverLink) {
           c_conf.cursor.ev = ev;
           c_update(ev);
         }
       }
 
       function keyup(ev) {
-        if (c_conf.cursor.ev.shiftKey !== ev.shiftKey && c_conf.hoverLink) {
+        if (c_conf.cursor.ev.altKey !== ev.altKey && c_conf.hoverLink) {
           c_conf.cursor.ev = ev;
           c_update(ev);
         }
@@ -285,7 +285,7 @@
           var { shadowBlur, shadowColor } = ctx;
           c_conf.hoverLink = { source: source, target: target };
 
-          c_applyConf({ shadowBlur: 3, shadowColor: c_conf.cursor.ev.shiftKey ? 'red' : 'black' });
+          c_applyConf({ shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
           c_link(x, y, xx, yy, a);
           c_applyConf({ shadowBlur: shadowBlur, shadowColor: shadowColor });
         } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
