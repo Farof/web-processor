@@ -8,7 +8,10 @@
 
     constructor: function Process_constructor() {
       this.items = new Map();
-      this.autoexec = true;
+
+      this.conf = new Map([
+        ['name', 'text']
+      ]);
 
       this.addItem = function Process_addItem(item) {
         var node = item.buildNode();

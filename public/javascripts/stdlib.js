@@ -15,41 +15,49 @@
 
     constructor: function () {
       this.initialized = false;
-
-      this.updateName = process => {
-        this.node.$('.process-name').value = process.name;
-      };
     },
 
     destroyer: function () {
-      wp.removeEventListener(this.process.uuid + ':name:changed', this.updateName);
-    },
-
-    builder: function () {
-      var self = this;
-
-      return [
-        new Element('p').adopt(
-          new Element('span', { text: 'Name: ' } ),
-          new Element('input', {
-            class: 'process-name',
-            type: 'text',
-            events: {
-              input: function () {
-                self.process.name = this.value;
-                self.process.save();
-                wp.dispatchEvent(self.process.uuid + ':name:changed', self.process);
-              }
-            }
-          })
-        )
-      ];
+      for (var [name, type] of this.process.conf) {
+        wp.removeEventListener([this.process.uuid, name, 'changed'].join(':'), this['update' + name.capitalize()]);
+      }
     },
 
     updater: function () {
       if (!this.initialized) {
-        this.updateName(this.process);
-        wp.addEventListener(this.process.uuid + ':name:changed', this.updateName);
+        var updater, self = this;
+        for (var [name, type] of this.process.conf) {
+          this['update' + name.capitalize()] = process => {
+            if (type === 'text') {
+              this.node.$('.process-conf-' + name).value = process.name;
+            }
+          };
+
+          updater = this['update' + name.capitalize()];
+
+          if (type === 'text') {
+            this.dataNode.grab(
+              new Element('p').adopt(
+                new Element('span', { text: name + ': ' } ),
+                new Element('input', {
+                  class: 'process-conf-' + name,
+                  type: 'text',
+                  events: {
+                    input: function () {
+                      self.process[name] = this.value;
+                      self.process.save();
+                      wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
+                    }
+                  }
+                })
+              )
+            );
+          }
+
+          updater(this.process);
+          wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
+        }
+
         this.initialized = true;
       }
     }

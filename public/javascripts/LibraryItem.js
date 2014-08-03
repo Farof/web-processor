@@ -97,7 +97,7 @@
       new Element('div', {
         class: 'content-item-data'
       }).adopt(
-        this.type.builder.call(this)
+        this.type.builder ? this.type.builder.call(this) : []
       )
     );
 
@@ -113,6 +113,7 @@
       return this;
     };
 
+    this.dataNode = node.$('.content-item-data');
     node.wpobj = this;
 
     return node;
