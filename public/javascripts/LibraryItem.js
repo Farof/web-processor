@@ -115,6 +115,7 @@
     };
 
     if (this.type.builder) this.dataNode.adopt(this.type.builder.call(this));
+    else this.node.classList.add('empty');
 
     node.wpobj = this;
 

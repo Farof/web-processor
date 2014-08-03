@@ -250,6 +250,27 @@
     }
   });
 
+  LibraryType.OrderOperator = new LibraryType({
+    listNode: $('#library-operators'),
+    name: 'OrderOperator',
+    displayName: 'Order',
+    nin: -1,
+    nout: -1,
+    defaultValue: '',
+
+    constructor: function () {
+      if (this.value === '') this.value = [];
+    },
+
+    /*builder: function () {
+
+    },*/
+
+    updater: function () {
+      this.value = Array.from(this.in).reduce((a, b) => a.concat(b.value), []).sort();
+    }
+  });
+
   /***** OUTPUTS *****/
 
   LibraryType.ViewOutput = new LibraryType({
