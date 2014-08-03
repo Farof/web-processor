@@ -145,10 +145,12 @@
     this.node.unload();
   };
 
-  LibraryItem.prototype.update = function () {
-    if (this.type.updater) this.type.updater.call(this);
+  LibraryItem.prototype.update = function (manual) {
+    if (this.type.updater && (this.process.autoexec || manual)) this.type.updater.call(this, manual);
     this.validate();
-    for (var out of this.out) out.update();
+    if (this.process.autoexec || manual) {
+      for (var out of this.out) out.update(manual);
+    }
   };
 
   LibraryItem.prototype.validate = function () {

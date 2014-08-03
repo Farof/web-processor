@@ -26,10 +26,14 @@
     updater: function () {
       if (!this.initialized) {
         var updater, self = this;
-        for (var [name, type] of this.process.conf) {
+
+        this.process.conf.forEach((type, name) => {
           this['update' + name.capitalize()] = process => {
+            var node = this.node.$('.process-conf-' + name);
             if (type === 'text') {
-              this.node.$('.process-conf-' + name).value = process.name;
+              node.value = process[name];
+            } else if (type === 'bool') {
+              node.checked = process[name];
             }
           };
 
@@ -52,16 +56,54 @@
                 })
               )
             );
+          } else if (type === 'bool') {
+            this.dataNode.grab(
+              new Element('p').adopt(
+                new Element('span', { text: name + ': ' } ),
+                new Element('input', {
+                  class: 'process-conf-' + name,
+                  type: 'checkbox',
+                  events: {
+                    click: function () {
+                      self.process[name] = this.checked;
+                      self.process.save();
+                      wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
+                    }
+                  }
+                })
+              )
+            );
           }
 
           updater(this.process);
           wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
-        }
+        });
 
         this.initialized = true;
       }
     }
   });
+
+  LibraryType.ExecuteControl = new LibraryType({
+    listNode: $('#library-controls'),
+    name: 'ExecuteControl',
+    displayName: 'Execute',
+    nin: 0,
+    nout: 0,
+    defaultValue: null,
+
+    builder: function () {
+      var self = this;
+      return new Element('button', {
+        text: 'Execute',
+        events: {
+          click: function () {
+            self.process.execute();
+          }
+        }
+      })
+    }
+  })
 
   /***** INPUTS *****/
 
