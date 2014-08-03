@@ -11,7 +11,7 @@
 
     if (this.type.constructor) this.type.constructor.call(this);
 
-    wp.addEventListener(this.uuid + ':valueChanged', newValue => {
+    wp.addEventListener(this.uuid + ':value:changed', newValue => {
       this.oldValue = this.value;
       this.value = newValue;
       this.update();

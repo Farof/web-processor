@@ -1,7 +1,6 @@
 # TODO
 
 - correct repositionning of elements in workspace when resizing
-- max left pos for element bites right border
 - better contextual cursor in workspace
 - arrow at end of link
 - grey element if not a suitable target
@@ -12,3 +11,8 @@
 - warn when input reaches output from 2 different paths
 - item alignement help
 - make the app headless, able to operate without ui, in browser or node
+  - the core app is headless and the ui is a process
+- named input / output
+- optional input
+- position collapse if reload when process is closed
+- export / import process

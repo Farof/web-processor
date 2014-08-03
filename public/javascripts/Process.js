@@ -8,6 +8,7 @@
 
     constructor: function Process_constructor() {
       this.items = new Map();
+      this.autoexec = true;
 
       this.addItem = function Process_addItem(item) {
         var node = item.buildNode();
@@ -93,6 +94,8 @@
             .setTop(Math.trunc((ev.clientY - pos.top - node.$('h4').offsetHeight / 2) / pos.height * 100));
 
         self.save();
+        var item = node.wpobj;
+        if (item.type.name === 'ProcessConf') item.update();
       }
 
       function mousedown(ev) {

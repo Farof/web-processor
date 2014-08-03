@@ -3,6 +3,58 @@
 
   var LibraryType = wp.LibraryType;
 
+  /***** CONTROLS *****/
+
+  LibraryType.ProcessConf = new LibraryType({
+    listNode: $('#library-controls'),
+    name: 'ProcessConf',
+    displayName: 'Configuration',
+    nin: 0,
+    nout: 0,
+    defaultValue: null,
+
+    constructor: function () {
+      this.initialized = false;
+
+      this.updateName = process => {
+        this.node.$('.process-name').value = process.name;
+      };
+    },
+
+    destroyer: function () {
+      wp.removeEventListener(this.process.uuid + ':name:changed', this.updateName);
+    },
+
+    builder: function () {
+      var self = this;
+
+      return [
+        new Element('p').adopt(
+          new Element('span', { text: 'Name: ' } ),
+          new Element('input', {
+            class: 'process-name',
+            type: 'text',
+            events: {
+              input: function () {
+                self.process.name = this.value;
+                self.process.save();
+                wp.dispatchEvent(self.process.uuid + ':name:changed', self.process);
+              }
+            }
+          })
+        )
+      ];
+    },
+
+    updater: function () {
+      if (!this.initialized) {
+        this.updateName(this.process);
+        wp.addEventListener(this.process.uuid + ':name:changed', this.updateName);
+        this.initialized = true;
+      }
+    }
+  });
+
   /***** INPUTS *****/
 
   LibraryType.TextInput = new LibraryType({
@@ -20,7 +72,7 @@
         value: this.value,
         events: {
           input: function () {
-            wp.dispatchEvent(self.uuid + ':valueChanged', this.value);
+            wp.dispatchEvent(self.uuid + ':value:changed', this.value);
           }
         }
       })
@@ -108,7 +160,7 @@
           if (opt.value === view.uuid) {
             opt.unload();
             if (select.value !== oldValue) {
-              wp.dispatchEvent(this.uuid + ':valueChanged', select.value);
+              wp.dispatchEvent(this.uuid + ':value:changed', select.value);
             }
             break;
           }
@@ -121,7 +173,7 @@
           text: view.name
         });
 
-        wp.addEventListener(view.uuid + ':nameChanged', view => {
+        wp.addEventListener(view.uuid + ':name:changed', view => {
           opt.textContent = view.name;
         });
 
@@ -150,7 +202,7 @@
         value: this.value,
         events: {
           change: function (ev) {
-            wp.dispatchEvent(self.uuid + ':valueChanged', this.value);
+            wp.dispatchEvent(self.uuid + ':value:changed', this.value);
           }
         }
       }).grab(new Element('option', {
