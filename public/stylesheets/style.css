@@ -5,11 +5,10 @@
 }
 
 body {
-  align-items: flex-start;
   background-color: var(--main-bg-color);
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
   display: flex;
-  flex-flow: row wrap;
+  flex-flow: column;
   margin: 0;
 /*  padding: 0px 16px;*/
 }
@@ -23,6 +22,12 @@ a {
   border-bottom: 1px dotted var(--main-border-color);
   margin-bottom: 10px;
   padding: 5px;
+}
+
+#main {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
 }
 
 .collection {

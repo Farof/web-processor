@@ -6,23 +6,24 @@ block content
     button(onclick='wp.bootstrap()') bootstrap
     button(onclick='wp.clearBootstrap()') clear
 
-  div(id='objects' class='collection')
-    h2 Objects
+  div(id='main')
+    div(id='objects' class='collection')
+      h2 Objects
 
-    div(id='process-list' class='collection-category')
-      h3(class='control-container')
-        span(class='collection-name') Processes
-        span(class='control-add control' onclick='wp.Process.new({})') +
+      div(id='process-list' class='collection-category')
+        h3(class='control-container')
+          span(class='collection-name') Processes
+          span(class='control-add control' onclick='wp.Process.new({})') +
 
-    div(id='view-list' class='collection-category')
-      h3(class='control-container')
-        span(class='collection-name') Views
-        span(class='control-add control' onclick='wp.View.new({})') +
+      div(id='view-list' class='collection-category')
+        h3(class='control-container')
+          span(class='collection-name') Views
+          span(class='control-add control' onclick='wp.View.new({})') +
 
-  div(id='content-list')
+    div(id='content-list')
 
-  div(id='library' class='collection')
-    h2 Library
+    div(id='library' class='collection')
+      h2 Library
 
   script(type='application/javascript' src='/javascripts/libs/uuid.js')
   script(type='application/javascript' src='/javascripts/libs/natives.js')
