@@ -111,7 +111,6 @@
               else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(val) }));
             }
           } else {
-            console.log('print: ', mode, i.value);
             if (mode === 'text') view.workspace.grab(new Element('p', { text: i.value }));
             else if (mode === 'html') view.workspace.innerHTML += i.value;
             else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(i.value) }));

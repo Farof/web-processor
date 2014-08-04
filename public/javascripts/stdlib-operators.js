@@ -86,6 +86,8 @@
           delete this.request;
           console.log('handle getXML error: ', err);
         });
+      } else {
+        this.value = null;
       }
     }
   });
@@ -114,12 +116,53 @@
             })
           };
         }
+      } else {
+        this.value = {};
       }
     },
 
     validator: function () {
-      console.log(this.in.size, this.in.values().next().value.value);
       return this.in.size > 0 && (this.in.values().next().value.value instanceof XMLDocument);
+    }
+  });
+
+  wp.LibraryType.RSStoHTML = new wp.LibraryType({
+    listNode: node,
+    name: 'RSStoHTML',
+    displayName: 'RSS to HTML',
+    nin: 1,
+    nosave: true,
+    defaultValue: '',
+
+    updater: function () {
+      if (this.in.size > 0) {
+        var feed = this.in.values().next().value.value, str = '';
+        if (feed.title) {
+          str += '<h3>' + feed.title + '<h4>';
+          str += '<div>';
+          for (var item of feed.items) {
+            str += '<div>';
+            str += '<h4><a href="' + item.link + '">' + item.title + '</a></h4>';
+            str += item.pubDate.toString().small();
+            str += '<div>';
+            str += item.description;
+            str += '</div>';
+            str += '</div>';
+          }
+          str += '</div>';
+          this.value = str;
+        }
+      } else {
+        this.value = '';
+      }
+    },
+
+    validator: function () {
+      var val;
+      if (this.in.size > 0) {
+        val = this.in.values().next().value.value;
+        return val && typeof val === 'object';
+      }
     }
   });
 
