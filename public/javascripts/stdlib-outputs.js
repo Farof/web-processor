@@ -13,20 +13,23 @@
     displayName: 'View',
     nin: -1,
     nout: 0,
-    defaultValue: '<none>',
+    defaultValue: {
+      view: '<none>',
+      mode: 'text'
+    },
 
     constructor: function () {
       this.viewAdded = function (view) {
-        this.addOption(this.node.$('select'), view);
+        this.addOption(this.node.$('.view-choice'), view);
       }.bind(this);
 
       this.viewRemoved = function (view) {
-        var select = this.node.$('select'), oldValue = select.value;
+        var select = this.node.$('.view-choice'), oldValue = select.value;
         for (var opt of select.children) {
           if (opt.value === view.uuid) {
             opt.unload();
-            if (select.value !== oldValue) {
-              wp.dispatchEvent(this.uuid + ':value:changed', select.value);
+            if (select.value !== oldValue.view) {
+              wp.dispatchEvent(this.uuid + ':value:changed', { view: select.value, mode: oldValue.mode });
             }
             break;
           }
@@ -43,7 +46,7 @@
           opt.textContent = view.name;
         });
 
-        if (view.uuid === this.value) {
+        if (view.uuid === this.value.view) {
           opt.setAttribute('selected', true);
           this.update();
         }
@@ -64,11 +67,11 @@
       var self = this;
 
       var node = new Element('select', {
-        name: 'select',
-        value: this.value,
+        class: 'view-choice',
+        value: this.value.view,
         events: {
           change: function (ev) {
-            wp.dispatchEvent(self.uuid + ':value:changed', this.value);
+            wp.dispatchEvent(self.uuid + ':value:changed', { view: this.value, mode: self.value.mode });
           }
         }
       }).grab(new Element('option', {
@@ -78,30 +81,49 @@
 
       wp.View.items.forEach(view => this.addOption(node, view));
 
-      return node;
+      return [node, new Element('select', {
+        class: 'view-mode',
+        events: {
+          change: function () {
+            wp.dispatchEvent(self.uuid + ':value:changed', { view: self.value.view, mode: this.value });
+          }
+        }
+      }).adopt(
+        new Element('option', { value: 'text', text: 'Text', selected: this.value.mode === 'text' }),
+        new Element('option', { value: 'html', text: 'HTML', selected: this.value.mode === 'html' }),
+        new Element('option', { value: 'json', text: 'JSON', selected: this.value.mode === 'json' })
+      )];
     },
 
     updater: function () {
-      var view;
-      if (view = wp.View.items.get(this.value)) {
+      var view, mode;
+      // console.log('updater: ', this.value);
+      if (view = wp.View.items.get(this.value.view)) {
         view.workspace.empty();
+        mode = this.value.mode;
+
         for (var i of this.in) {
           // action depending type of in and type of value
           if (Array.isArray(i.value)) {
             for (var val of i.value) {
-              view.workspace.grab(new Element('p', { text: val }));
+              if (mode === 'text') view.workspace.grab(new Element('p', { text: val }));
+              else if (mode === 'html') view.workspace.innerHTML += val;
+              else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(val) }));
             }
           } else {
-            view.workspace.grab(new Element('p', { text: i.value }));
+            console.log('print: ', mode, i.value);
+            if (mode === 'text') view.workspace.grab(new Element('p', { text: i.value }));
+            else if (mode === 'html') view.workspace.innerHTML += i.value;
+            else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(i.value) }));
           }
         }
-      } else if (view = wp.View.items.get(this.oldValue)) {
+      } else if (this.oldValue && (view = wp.View.items.get(this.oldValue.view))) {
         view.workspace.empty();
       }
     },
 
     validator: function () {
-      return this.value !== this.type.defaultValue;
+      return this.value.view !== this.type.defaultValue;
     }
   });
 
