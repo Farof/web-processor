@@ -12,7 +12,6 @@
     name: 'TextInput',
     displayName: 'Text',
     nin: 0,
-    nout: -1,
     defaultValue: '',
 
     builder: function () {
@@ -34,7 +33,6 @@
     name: 'ListInput',
     displayName: 'List',
     nin: 0,
-    nout: -1,
     defaultValue: '',
 
     constructor: function () {

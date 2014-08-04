@@ -28,7 +28,7 @@
       out: Array.from(this.out).map(o => o.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
-      value: this.value
+      value: this.type.nosave ? null : this.value
     };
   };
 
@@ -178,12 +178,13 @@
   };
 
   // library item type
-  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
+  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
     builder, constructor, destroyer, updater, validator, defaultValue }) {
     this.name = name;
     this.displayName = displayName;
-    this.nin = nin;
-    this.nout = nout;
+    this.nin = typeof nin === 'number' ? nin : -1;
+    this.nout = typeof nout === 'number' ? nout : -1;
+    this.nosave = !!nosave;
     this.builder = builder;
     this.constructor = constructor;
     this.destroyer = destroyer;

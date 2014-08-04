@@ -11,9 +11,8 @@
     listNode: node,
     name: 'LowerCaseOperator',
     displayName: 'LowerCase',
-    nin: -1,
-    nout: -1,
     defaultValue: '',
+    nosave: true,
 
     updater: function () {
       this.value = [];
@@ -29,9 +28,8 @@
     listNode: node,
     name: 'UpperCaseOperator',
     displayName: 'UpperCase',
-    nin: -1,
-    nout: -1,
     defaultValue: '',
+    nosave: true,
 
     updater: function () {
       this.value = [];
@@ -47,8 +45,6 @@
     listNode: node,
     name: 'OrderOperator',
     displayName: 'Order',
-    nin: -1,
-    nout: -1,
     defaultValue: '',
 
     constructor: function () {
@@ -67,8 +63,8 @@
     name: 'RequestXML',
     displayName: 'Request XML',
     nin: 1,
-    nout: -1,
     defaultValue: '',
+    nosave: true,
 
     updater: function () {
       // handle 400, 500, 502
@@ -92,6 +88,39 @@
         });
       }
     }
-  })
+  });
+
+  wp.LibraryType.parseRSS = new wp.LibraryType({
+    listNode: node,
+    name: 'parseRSS',
+    displayName: 'Parse RSS',
+    nin: 1,
+    nosave: true,
+    defaultValue: {},
+
+    updater: function () {
+      if (this.in.size > 0) {
+        var xml = this.in.values().next().value.value;
+        if (xml instanceof XMLDocument) {
+          this.value = {
+            title: xml.querySelector('channel > title').textContent,
+            items: Array.from(xml.querySelectorAll('channel > item')).map(item => {
+              return {
+                title: item.querySelector('title').textContent,
+                link: item.querySelector('link').textContent,
+                description: item.querySelector('description').textContent,
+                pubDate: new Date(item.querySelector('pubDate').textContent)
+              };
+            })
+          };
+        }
+      }
+    },
+
+    validator: function () {
+      console.log(this.in.size, this.in.values().next().value.value);
+      return this.in.size > 0 && (this.in.values().next().value.value instanceof XMLDocument);
+    }
+  });
 
 })(this);

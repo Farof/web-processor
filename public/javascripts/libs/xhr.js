@@ -1,11 +1,6 @@
 (exports => {
   "use strict";
 
-  /*
-var a = (b, c) => b + c;
-a(2, 3);
-  */
-
   var XHR = exports.XHR = {
     init: function (url, options = {}) {
       var xhr = new XMLHttpRequest();
