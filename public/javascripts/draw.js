@@ -35,5 +35,7 @@
       return isPointInStroke(ctx, c_conf);
     }
   };
+  
+  wp.draw._conf = configure;
 
 })(this);

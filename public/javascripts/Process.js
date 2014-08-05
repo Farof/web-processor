@@ -299,9 +299,9 @@
           var { shadowBlur, shadowColor } = ctx;
           c_conf.hoverLink = { source: source, target: target };
 
-          c_applyConf({ shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
+          wp.draw._conf(ctx, { shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
           c_link(x, y, xx, yy, a, dir);
-          c_applyConf({ shadowBlur: shadowBlur, shadowColor: shadowColor });
+          wp.draw._conf(ctx, { shadowBlur: shadowBlur, shadowColor: shadowColor });
         } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
           delete c_conf.hoverLink;
         }
