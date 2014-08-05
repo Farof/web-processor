@@ -82,7 +82,7 @@
     function mousedown(ev) {
       if (ev.altKey) {
         self.process.removeItem(self);
-      } else if (ev.shiftKey && self.type.nout !== 0) {
+      } else if (ev.shiftKey && self.canEmitLink()) {
         ev.stop();
         self.process.canvas.startLink(ev);
       }
@@ -164,6 +164,14 @@
     delete this.type;
     delete this.node.wpobj;
     this.node.unload();
+  };
+
+  LibraryItem.prototype.canEmitLink = function () {
+    return this.type.nout === -1 || (this.type.nout === 1 && this.out.size < 1);
+  };
+
+  LibraryItem.prototype.canAcceptLink = function (source) {
+    return (this.type.nin === -1 && !this.in.has(source)) || (this.type.nin === 1 && this.in.size < 1);
   };
 
   LibraryItem.prototype.onLink = function (target, source) {
@@ -299,10 +307,6 @@
 
     return !err;
   };
-
-  /*Object.defineProperties(LibraryItem.prototype, {
-    pathDown:
-  });/**/
 
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,

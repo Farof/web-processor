@@ -49,7 +49,7 @@
           }
         }
       };
-      
+
       this.initialize = function () {
         this.items.forEach(item => item.initialize());
       };
@@ -154,6 +154,9 @@
         if (c_conf.cursor.ev.altKey !== ev.altKey && c_conf.hoverLink) {
           c_conf.cursor.ev = ev;
           c_update(ev);
+        } else if (c_conf.cursor.ev.shiftKey !== ev.shiftKey) {
+          c_conf.cursor.ev = ev;
+          linkModeOn();
         }
       }
 
@@ -161,7 +164,41 @@
         if (c_conf.cursor.ev.altKey !== ev.altKey && c_conf.hoverLink) {
           c_conf.cursor.ev = ev;
           c_update(ev);
+        } else if (c_conf.cursor.ev.shiftKey !== ev.shiftKey) {
+          c_conf.cursor.ev = ev;
+          linkModeOff();
         }
+      }
+
+      function linkModeOn() {
+        Array.from(self.workspace.$$('.content-item')).forEach(node => {
+          if (!node.wpobj.canEmitLink()) node.classList.add('fade');
+          else node.classList.remove('fade');
+        });
+      }
+
+      function linkModeOff() {
+        if (!c_conf.linkFrom) {
+          Array.from(self.workspace.$$('.content-item')).forEach(node => {
+            node.classList.remove('fade');
+          });
+        }
+      }
+
+      function linkingOn() {
+        Array.from(self.workspace.$$('.content-item')).forEach(node => {
+          if (node === c_conf.linkFrom) {}
+          else if (node.wpobj.canAcceptLink(c_conf.linkFrom.wpobj)) {
+            node.classList.remove('fade');
+          } else {
+            node.classList.add('fade');
+          }
+        });
+      }
+
+      function linkingOff() {
+        if (c_conf.cursor.ev.shiftKey) linkModeOn();
+        else linkModeOff();
       }
 
       var c_conf = this.c_conf = {
@@ -186,6 +223,8 @@
         document.addEventListener('mouseup', c_stopLink);
 
         c_conf.linkFrom = ev.target.getParent('.content-item');
+
+        linkingOn();
       }
 
       function c_moveLink(ev) {
@@ -197,11 +236,13 @@
         document.removeEventListener('mouseup', c_stopLink);
 
         var start = c_conf.linkFrom, target = c_conf.hover;
-        if (target && target !== start && target.wpobj.type.nin !== 0) {
+        if (target && target !== start && target.wpobj.canAcceptLink(start)) {
           wp.dispatchEvent(start.wpobj.uuid + ':link', target.wpobj, start.wpobj);
         }
 
         delete c_conf.linkFrom;
+
+        linkingOff();
 
         c_update();
       }
@@ -303,7 +344,7 @@
         var target = c_conf.hover;
 
         // sometimes a bug where target.wpobj is not defined ?
-        if (!target || target === c_conf.linkFrom || target.wpobj.type.nin === 0) {
+        if (!target || target === c_conf.linkFrom || !target.wpobj.canAcceptLink(c_conf.linkFrom.wpobj)) {
           var pos = canvas.getBoundingClientRect();
           target = {
             offsetLeft: ev.clientX - pos.left,
@@ -381,7 +422,7 @@
   wp.Process.initAll = function () {
     this.items.forEach(item => item.initialize());
   };
-  
+
   wp.Process.executeAll = function () {
     this.items.forEach(item => item.execute(true));
   };

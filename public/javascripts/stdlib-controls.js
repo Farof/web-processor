@@ -7,6 +7,15 @@
   }).grab(new Element('h3', { text: 'Controls' }));
   $('#library').grab(node);
 
+  wp.LibraryType.TestControl = new wp.LibraryType({
+    listNode: node,
+    name: 'TestControl',
+    displayName: 'Test',
+    nin: -1,
+    nout: 0,
+    nosave: true
+  });
+
   wp.LibraryType.ProcessConf = new wp.LibraryType({
     listNode: node,
     name: 'ProcessConf',
@@ -100,7 +109,7 @@
         }
       })
     }
-  })
+  });
 
 
 })(this);

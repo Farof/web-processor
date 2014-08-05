@@ -18,3 +18,4 @@
 - handle request redirect
 - move canvas related stuff in its own files: abstract manipulation / process drawing
 - make items event emiters, don't use global hub
+- handle bad data persisted: junk data, behavior that shouldn't work
