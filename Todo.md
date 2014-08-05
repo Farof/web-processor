@@ -3,7 +3,6 @@
 - correct repositionning of elements in workspace when resizing
 - better contextual cursor in workspace
 - arrow at end of link
-- grey element if not a suitable target
 - server-side save
 - order input
 - item alignement help
@@ -16,6 +15,6 @@
 - identify library item type by uuid to ensure process integrity if an item is renamed
 - don't redraw canvas on every mousemove
 - handle request redirect
-- move canvas related stuff in its own files: abstract manipulation / process drawing
+- move canvas related stuff in Process.js its own file
 - make items event emiters, don't use global hub
 - handle bad data persisted: junk data, behavior that shouldn't work

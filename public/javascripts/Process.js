@@ -264,55 +264,22 @@
         }
       }
 
-      function c_applyConf(conf) {
-        for (var key in conf) {
-          ctx[key] = conf[key];
-        }
-      }
-
-      function c_pointInPath() {
-        return c_conf.cursor.in && ctx.isPointInStroke(c_conf.cursor.x, c_conf.cursor.y);
-      }
-
-      function c_drawCircle(x, y, r, conf, stroke, fill) {
-        c_applyConf(conf);
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, 2 * Math.PI, false);
-        if (fill) ctx.fill();
-        if (stroke) ctx.stroke();
-        ctx.closePath();
-
-        return c_pointInPath();
-      }
-
-      function c_drawLine(x, y, xx, yy, conf, stroke, fill) {
-        c_applyConf(conf);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(xx, yy);
-        if (fill) ctx.fill();
-        if (stroke) ctx.stroke();
-        ctx.closePath();
-
-        return c_pointInPath();
-      }
-
       function c_cursor() {
-        c_drawCircle(c_conf.cursor.x, c_conf.cursor.y, 5, {
+        wp.draw.circle(ctx, c_conf, c_conf.cursor.x, c_conf.cursor.y, 5, {
           strokeStyle: 'grey',
           lineWidth: 1
-        }, true);
+        }, true)
       }
 
       function c_link(x, y, xx, yy, a, dir) {
         var hover;
 
-        hover = c_drawCircle(x, y, 3, {
+        hover = wp.draw.circle(ctx, c_conf, x, y, 3, {
           strokeStyle: 'black',
           fillStyle: 'black'
         }, true, true) || hover;
 
-        hover = c_drawLine(x, y, xx, yy, {
+        hover = wp.draw.line(ctx, c_conf, x, y, xx, yy, {
           lineWidth: 3
         }, true, true) || hover;
 
