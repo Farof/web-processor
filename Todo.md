@@ -13,7 +13,7 @@
 - position collapse if reload when process is closed
 - export / import process
 - identify library item type by uuid to ensure process integrity if an item is renamed
-- don't redraw canvas on every mousemove
+- don't redraw canvas on every mousemove: is it possible without breaking link hover detection ?
 - handle request redirect
 - move canvas related stuff in Process.js its own file
 - make items event emiters, don't use global hub

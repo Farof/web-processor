@@ -135,6 +135,8 @@
         c_conf.cursor.in = true;
         mouse_update(ev);
         c_update(ev);
+        if (c_conf.linkFrom) linkingOn();
+        else if (ev.shiftKey) linkModeOn();
       }
 
       function mousemove(ev) {
@@ -148,6 +150,7 @@
         document.removeEventListener('keyup', keyup);
         c_conf.cursor.in = false;
         c_update();
+        linkModeOff();
       }
 
       function keydown(ev) {
@@ -197,7 +200,7 @@
       }
 
       function linkingOff() {
-        if (c_conf.cursor.ev.shiftKey) linkModeOn();
+        if (c_conf.cursor.in && c_conf.cursor.ev.shiftKey) linkModeOn();
         else linkModeOff();
       }
 
@@ -210,7 +213,7 @@
       function c_update(ev) {
         c_clear();
         // if (c_conf.cursor.in) c_cursor();
-        if (c_conf.linkFrom) c_drawNewLink(ev);
+        if (c_conf.cursor.in && c_conf.linkFrom) c_drawNewLink(ev);
         c_drawLinks(ev);
       }
 
