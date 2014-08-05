@@ -331,17 +331,7 @@
 
     flatten: {
       value: function (recursive) {
-        var ret = [];
-        var done = true;
-
-        for (var item of this) {
-          ret = ret.concat(item);
-          if (Array.isArray(item)) {
-            done = false;
-          }
-        }
-
-        return (!recursive || done) ? ret : ret.flatten(true);
+        return this.reduce((a, b) => a.concat(Array.isArray(b) && recursive ? b.flatten(recursive) : b), []);
       }
     }
   });
@@ -423,6 +413,7 @@
         while (this.children[0]) {
           this.removeChild(this.children[0]);
         }
+        this.textContent = '';
         return this;
       }
     },
@@ -441,7 +432,7 @@
       enumerable: true,
       value: function (selector, self) {
         if (self && this.mozMatchesSelector(selector)) return this;
-        else if (this.parentNode) return this.parentNode.getParent(selector, true);
+        else if (this.parentNode && this.parentNode.getParent) return this.parentNode.getParent(selector, true);
       }
     },
 

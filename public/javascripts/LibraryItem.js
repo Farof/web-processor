@@ -7,24 +7,39 @@
     this.type = type;
     this.in = new Set();
     this.out = new Set();
+    this.downstreams = new Map();
     this.value = value || this.type.defaultValue;
     this.initialized = false;
-
-    if (this.type.constructor) this.type.constructor.call(this);
 
     wp.addEventListener(this.uuid + ':value:changed', newValue => {
       this.oldValue = this.value;
       this.value = newValue;
-      this.update();
       this.process.save();
+      if (wp.initialized) this.updateDownstreams();
     });
+
+    wp.addEventListener(this.uuid + ':link', this.onLink);
+    wp.addEventListener(this.uuid + ':unlink', this.onUnlink);
+    wp.addEventListener(this.uuid + ':linked', this.onLinked);
+    wp.addEventListener(this.uuid + ':unlinked', this.onUnlinked);
+    this.onDownstreamLink = this.onDownstreamLink.bind(this);
+    this.onDownstreamUnlink = this.onDownstreamUnlink.bind(this);
+
+    if (this.type.constructor) this.type.constructor.call(this);
+
+    wp.dispatchEvent('process-item:new', this);
+  };
+
+  LibraryItem.prototype.initialize = function () {
+    if (this.type.initialize) this.type.initialize.call(this);
+    this.initialized = true;
+    this.validate();
   };
 
   LibraryItem.prototype.serialize = function () {
     return {
       uuid: this.uuid,
       type: this.type.name,
-      // in: Array.from(this.in).map(i => i.uuid),
       out: Array.from(this.out).map(o => o.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
@@ -90,6 +105,10 @@
           // console.log(self.value);
         },
         mouseleave: function () { self.process.c_conf.hover = null; }
+      },
+      properties: {
+        // see Process.js c_drawNewLink
+        // wpobj: this
       }
     }).adopt(
       new Element('h4', {
@@ -97,7 +116,13 @@
         events: {
           mousedown: dragstart
         }
-      }),
+      }).grab(
+        new Element('span', {
+          class: 'item-info',
+          text: '<!>',
+          title: 'something is wrong'
+        })
+      ),
 
       this.dataNode
     );
@@ -122,25 +147,18 @@
     return node;
   };
 
-  LibraryItem.prototype.linkTo = function (item) {
-    this.out.add(item);
-    item.in.add(this);
-    item.update();
-    this.validate();
-    this.process.save();
-  };
-
-  LibraryItem.prototype.removeLinkTo = function (item) {
-    this.out.delete(item);
-    item.in.delete(this);
-    item.update();
-    this.validate();
-    this.process.save();
-  };
-
   LibraryItem.prototype.destroy = function () {
-    this.in.forEach(i => i.out.delete(this));
-    this.out.forEach(o => o.in.delete(this));
+    this.destroying = true;
+    wp.dispatchEvent('process-item:destroy', this);
+
+    this.out.forEach(target => wp.dispatchEvent(this.uuid + ':unlink', target, this));
+    this.in.forEach(source => wp.dispatchEvent(source.uuid + ':unlink', this, source));
+
+    wp.removeEventListener(this.uuid + ':link', this.onLink);
+    wp.removeEventListener(this.uuid + ':unlink', this.onUnlink);
+    wp.removeEventListener(this.uuid + ':linked', this.onLinked);
+    wp.removeEventListener(this.uuid + ':unlinked', this.onUnlinked);
+
     if (this.type.destroyer) this.type.destroyer.call(this);
     delete this.process;
     delete this.type;
@@ -148,38 +166,147 @@
     this.node.unload();
   };
 
-  LibraryItem.prototype.update = function (manual) {
-    var p;
-    if (this.type.updater && (this.process.autoexec || manual)) p = this.type.updater.call(this, manual);
+  LibraryItem.prototype.onLink = function (target, source) {
+    source.out.add(target);
 
-    if (this.validate() && (this.process.autoexec || manual)) {
-      if (p) {
-        console.log(this.process.autoexec, manual);
-        p.then(() => {
-          for (var out of this.out) out.update(manual);
-        })
-      } else {
-        for (var out of this.out) out.update(manual);
-      }
+    if (target.downstreams.size > 0) {
+      source.downstreams.set(target.uuid, target.getUniqueDownstreams());
+    } else {
+      source.downstreams.set(target.uuid, new Set([target]));
+    }
+
+    wp.addEventListener(target.uuid + ':link', source.onDownstreamLink);
+
+    wp.dispatchEvent(target.uuid + ':linked', source, target);
+    if (wp.initialized) {
+      source.validate();
+      source.process.save();
     }
   };
 
-  LibraryItem.prototype.validate = function () {
-    var success = true;
+  LibraryItem.prototype.onUnlink = function (target, source) {
+    source.out.delete(target);
+    source.downstreams.delete(target.uuid);
 
-    if (this.type.validator && !this.type.validator.call(this)) success = false;
-    else if (this.type.nin !== 0 && !this.in.size) success = false;
-    else if (this.type.nout !== 0 && !this.out.size) success = false;
+    wp.removeEventListener(target.uuid + ':link', source.onDownstreamLink);
 
-    if (success) this.node.classList.add('success');
-    else this.node.classList.remove('success');
-
-    return success;
+    wp.dispatchEvent(target.uuid + ':unlinked', source, target);
+    if (wp.initialized) {
+      source.validate();
+      source.process.save();
+    }
   };
+
+  LibraryItem.prototype.onLinked = function (source, target) {
+    target.in.add(source);
+    if (wp.initialized) {
+      target.validate();
+      target.updateDownstreams();
+    }
+  };
+
+  LibraryItem.prototype.onUnlinked = function (source, target) {
+    target.in.delete(source);
+    if (wp.initialized && !target.destroying) {
+      target.validate();
+      target.updateDownstreams();
+    }
+  };
+
+  LibraryItem.prototype.onDownstreamLink = function (target, downstream) {
+    this.downstreams.set(
+      downstream.uuid,
+      new Set(Array.from(downstream.downstreams.values()).reduce((a, b) => a.concat(Array.from(b)), []))
+    );
+    this.in.forEach(i => i.onDownstreamLink(downstream, this));
+  };
+
+  LibraryItem.prototype.onDownstreamUnlink = function (target, downstream) {
+    if (downstream.downstreams.size > 0) {
+      this.downstreams.set(downstream.uuid, downstream.getUniqueDownstreams());
+    } else {
+      this.downstreams.set(downstream.uuid, new Set([downstream]));
+    }
+    this.in.forEach(i => i.onDownstreamUnlink(downstream, this));
+  };
+
+  LibraryItem.prototype.getUniqueDownstreams = function () {
+    return new Set(Array.from(this.downstreams.values()).reduce((a, b) => a.concat(Array.from(b)), []))
+  };
+
+  LibraryItem.prototype.getAllUpdates = function (sources, manual) {
+    return Array.from(sources).reduce((a, b) => a.concat(b.update(manual)), [])
+  };
+
+  LibraryItem.prototype.updateDownstreams = function () {
+    if (this.downstreams.size > 0) {
+      return Promise.all(this.getAllUpdates(this.getUniqueDownstreams()));
+    } else {
+      return this.update();
+    }
+  };
+
+  LibraryItem.prototype.update = function (manual) {
+    // console.log('update: ', this.type.name, this.node, this.updateInProgress);
+    var p = this.updateInProgress || (this.updateInProgress = new Promise((resolve, reject) => {
+
+      if (this.process.autoexec || manual) {
+        if (this.validate()) {
+          if (this.in.size === 0) {
+            this.execute(this.value).then(resolve, reject);
+          } else {
+            Promise.all(this.getAllUpdates(this.in.values(), manual)).then(values => {
+              this.execute(values).then(resolve, reject);
+            }, err => {
+              this.validate('upstream error: ' + err);
+              wp.dispatchEvent(this.uuid + ':upstream:error');
+              reject(err);
+            });
+          }
+        } else {
+          reject(this.errorMessage);
+        }
+      } else {
+        reject('autoexec disabled');
+      }
+    }));
+
+    // when the current update finishes, delete its cache to allow a new one to take place
+    p.then(() => delete this.updateInProgress, () => delete this.updateInProgress)
+    .catch(() => delete this.updateInProgress);
+
+    return p;
+  };
+
+  LibraryItem.prototype.execute = function (values) {
+    return values ? new Promise((resolve, reject) => {
+      if (this.type.execute) this.type.execute.call(this, values).then(resolve, reject);
+      else resolve(this.value);
+    }) : Promise.reject('value was undefined');
+  };
+
+  LibraryItem.prototype.validate = function (err = '') {
+    if (this.type.validator && !this.type.validator.call(this)) err = this.errorMessage;
+    else if (this.type.nin !== 0 && !this.in.size) err = 'input needed';
+    else if (this.type.nout !== 0 && !this.out.size) err = 'output needed';
+
+    if (!err) this.node.classList.add('success');
+    else {
+      this.node.classList.remove('success');
+      this.node.$('.item-info').title = err;
+      this.errorMessage = err;
+    }
+
+    return !err;
+  };
+
+  /*Object.defineProperties(LibraryItem.prototype, {
+    pathDown:
+  });/**/
 
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
-    builder, constructor, destroyer, updater, validator, defaultValue }) {
+    builder, constructor, initialize, destroyer, execute, validator, defaultValue }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = typeof nin === 'number' ? nin : -1;
@@ -187,8 +314,9 @@
     this.nosave = !!nosave;
     this.builder = builder;
     this.constructor = constructor;
+    this.initialize = initialize;
     this.destroyer = destroyer;
-    this.updater = updater;
+    this.execute = execute;
     this.validator = validator;
     this.defaultValue = defaultValue;
 

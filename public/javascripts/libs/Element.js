@@ -52,36 +52,6 @@
       this.innerHTML = text;
     },
 
-    /*Absolute: function (bound) {
-      var self = this;
-      document.addEventListener('DOMNodeInserted', function setAbsolute(e) {
-        self.setAbsolute(bound);
-        document.removeEventListener('DOMNodeInserted', setAbsolute, false);
-      }, false);
-    },
-
-    Dragable: function (bound) {
-      var
-        offsetX,
-        offsetY,
-        boundPos = bound.getPosition();
-
-      bound.style.position = 'relative';
-
-      this.setDragAction(function (e) {
-        this.style.left = e.clientX - boundPos.left - offsetX + 'px';
-        this.style.top = e.clientY - boundPos.top - offsetY + 'px';
-      }, {
-        mousedown: function (e) {
-          var pos = this.getPosition(bound);
-          this.setAbsolute(bound);
-          offsetX = e.clientX - boundPos.left - parseInt(this.style.left, 10);
-          offsetY = e.clientY - boundPos.top - parseInt(this.style.top, 10);
-          bound.appendChild(this);
-        }
-      })
-    },/**/
-
     properties: function (properties) {
       var key;
 

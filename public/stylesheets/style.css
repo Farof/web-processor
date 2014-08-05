@@ -113,7 +113,7 @@ a {
   border: 2px solid var(--main-border-color);
   border-radius: 10px 10px 0 0;
   margin-bottom: 10px;
-/*  overflow: hidden;*/
+  overflow: hidden;
 }
 
 .content > h3 {
@@ -179,7 +179,19 @@ a {
   cursor: pointer;
   margin: 3px 0 0;
   padding: 0 3px 3px;
+  position: relative;
   text-align: center;
+}
+
+.item-info {
+  cursor: pointer;
+  float: right;
+  font-weight: normal;
+  margin: 0 3px 0 7px;
+}
+
+.content-item.success .item-info {
+  display: none;
 }
 
 .content-item-data {

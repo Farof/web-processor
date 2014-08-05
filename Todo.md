@@ -6,9 +6,6 @@
 - grey element if not a suitable target
 - server-side save
 - order input
-- make algorithme to update only the neccessary items when updating process
-- message indicating why an item is failing
-- warn when input reaches output from 2 different paths
 - item alignement help
 - make the app headless, able to operate without ui, in browser or node
   - the core app is headless and the ui is a process
@@ -19,3 +16,5 @@
 - identify library item type by uuid to ensure process integrity if an item is renamed
 - don't redraw canvas on every mousemove
 - handle request redirect
+- move canvas related stuff in its own files: abstract manipulation / process drawing
+- make items event emiters, don't use global hub

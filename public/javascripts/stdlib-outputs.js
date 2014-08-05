@@ -11,7 +11,6 @@
     listNode: node,
     name: 'ViewOutput',
     displayName: 'View',
-    nin: -1,
     nout: 0,
     defaultValue: {
       view: '<none>',
@@ -19,24 +18,25 @@
     },
 
     constructor: function () {
-      this.viewAdded = function (view) {
+      this.viewAdded = view => {
         this.addOption(this.node.$('.view-choice'), view);
-      }.bind(this);
+      };
 
-      this.viewRemoved = function (view) {
+      this.viewRemoved = view => {
         var select = this.node.$('.view-choice'), oldValue = select.value;
         for (var opt of select.children) {
           if (opt.value === view.uuid) {
             opt.unload();
-            if (select.value !== oldValue.view) {
-              wp.dispatchEvent(this.uuid + ':value:changed', { view: select.value, mode: oldValue.mode });
+
+            if (select.value !== oldValue) {
+              wp.dispatchEvent(this.uuid + ':value:changed', { view: select.value, mode: this.value.mode });
             }
             break;
           }
         }
-      }.bind(this);
+      };
 
-      this.addOption = function (select, view) {
+      this.addOption = (select, view) => {
         var opt = new Element('option', {
           value: view.uuid,
           text: view.name
@@ -48,17 +48,28 @@
 
         if (view.uuid === this.value.view) {
           opt.setAttribute('selected', true);
-          this.update();
+          // if (wp.initialized) this.update();
         }
 
         select.grab(opt);
-      }.bind(this);
+      };
 
+      // wp.addEventListener(this.uuid + ':value:changed', newValue => {
+        // console.log(this.oldValue, this.value);
+      // });
+
+      this.onUpstreamError = () => {
+        var view = wp.View.items.get(this.value.view);
+        if (view) view.workspace.empty();
+      };
+
+      wp.addEventListener(this.uuid + ':upstream:error', this.onUpstreamError);
       wp.addEventListener('View:new', this.viewAdded);
       wp.addEventListener('View:destroy', this.viewRemoved);
     },
 
     destroyer: function () {
+      wp.removeEventListener(this.uuid + ':upstream:error', this.onUpstreamError);
       wp.removeEventListener('View:new', this.viewAdded);
       wp.removeEventListener('View:destroy', this.viewRemoved);
     },
@@ -95,34 +106,35 @@
       )];
     },
 
-    updater: function () {
-      var view, mode;
-      // console.log('updater: ', this.value);
-      if (view = wp.View.items.get(this.value.view)) {
-        view.workspace.empty();
-        mode = this.value.mode;
+    execute: function (values) {
+      return new Promise(resolve => {
+        var view, mode = this.value.mode;
 
-        for (var i of this.in) {
-          // action depending type of in and type of value
-          if (Array.isArray(i.value)) {
-            for (var val of i.value) {
-              if (mode === 'text') view.workspace.grab(new Element('p', { text: val }));
-              else if (mode === 'html') view.workspace.innerHTML += val;
-              else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(val) }));
-            }
-          } else {
-            if (mode === 'text') view.workspace.grab(new Element('p', { text: i.value }));
-            else if (mode === 'html') view.workspace.innerHTML += i.value;
-            else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(i.value) }));
-          }
+        if (this.oldValue && (view = wp.View.items.get(this.oldValue.view))) {
+          view.workspace.empty();
         }
-      } else if (this.oldValue && (view = wp.View.items.get(this.oldValue.view))) {
-        view.workspace.empty();
-      }
+
+        if (view = wp.View.items.get(this.value.view)) {
+          view.workspace.empty();
+
+          Array.from(values).flatten().forEach(value => {
+            // console.log('write: ', value, mode);
+            if (mode === 'text') view.workspace.grab(new Element('p', { text: value }));
+            else if (mode === 'html') view.workspace.innerHTML += value;
+            else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(value) }));
+          });
+        }
+
+        resolve(values);
+      });
     },
 
     validator: function () {
-      return this.value.view !== this.type.defaultValue;
+      if (this.value.view === this.type.defaultValue.view) {
+        this.errorMessage = 'choose a view';
+        return false;
+      }
+      return true;
     }
   });
 

@@ -29,7 +29,7 @@ router.get('/', function(req, res) {
       res.send(500);
     }
   } else {
-    res.send(400, 'invalide URL, check querystring: /proxy?url=some-valid-url');
+    res.send(400, '"' + req.query.url + '" is an invalid URL, check querystring: /proxy?url=some-valid-url');
   }
 });
 

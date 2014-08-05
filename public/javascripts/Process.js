@@ -45,17 +45,23 @@
 
         for (var [uuid, item] of this.items) {
           for (var out of (co[uuid] || [])) {
-            item.linkTo(this.items.get(out));
+            wp.dispatchEvent(item.uuid + ':link', this.items.get(out), item);
           }
         }
-
-        this.execute();
+      };
+      
+      this.initialize = function () {
+        this.items.forEach(item => item.initialize());
       };
 
       this.execute = function (manual) {
-        for (var [uuid, item] of this.items) {
-          item.update(true);
-        }
+        this.getDownstreams().forEach(downstream => downstream.update(manual));
+      };
+
+      this.getDownstreams = function () {
+        return new Set(Array.from(this.items.values()).reduce((a, b) => {
+          return a.concat(b.downstreams.size > 0 ? Array.from(b.getUniqueDownstreams()) : b);
+        }, []));
       };
 
       wp.addEventListener(this.uuid + ':autoexec:changed', process => {
@@ -110,7 +116,7 @@
 
       function mousedown(ev) {
         if (ev.altKey && c_conf.hoverLink) {
-          c_conf.hoverLink.source.wpobj.removeLinkTo(c_conf.hoverLink.target.wpobj);
+          wp.dispatchEvent(c_conf.hoverLink.source.wpobj.uuid + ':unlink', c_conf.hoverLink.target.wpobj, c_conf.hoverLink.source.wpobj);
           c_update();
         }
       }
@@ -192,7 +198,7 @@
 
         var start = c_conf.linkFrom, target = c_conf.hover;
         if (target && target !== start && target.wpobj.type.nin !== 0) {
-          start.wpobj.linkTo(target.wpobj);
+          wp.dispatchEvent(start.wpobj.uuid + ':link', target.wpobj, start.wpobj);
         }
 
         delete c_conf.linkFrom;
@@ -296,6 +302,7 @@
       function c_drawNewLink(ev) {
         var target = c_conf.hover;
 
+        // sometimes a bug where target.wpobj is not defined ?
         if (!target || target === c_conf.linkFrom || target.wpobj.type.nin === 0) {
           var pos = canvas.getBoundingClientRect();
           target = {
@@ -356,6 +363,7 @@
         window.requestAnimationFrame(function () {
           canvas.width = self.workspace.offsetWidth;
           canvas.height = self.workspace.offsetHeight;
+          canvas.update();
         });
       });
 
@@ -369,5 +377,13 @@
       return node;
     }
   });
+
+  wp.Process.initAll = function () {
+    this.items.forEach(item => item.initialize());
+  };
+  
+  wp.Process.executeAll = function () {
+    this.items.forEach(item => item.execute(true));
+  };
 
 })(this);

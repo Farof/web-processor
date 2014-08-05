@@ -13,7 +13,7 @@
     displayName: 'Configuration',
     nin: 0,
     nout: 0,
-    defaultValue: null,
+    nosave: true,
 
     destroyer: function () {
       for (var [name, type] of this.process.conf) {
@@ -21,65 +21,63 @@
       }
     },
 
-    updater: function () {
-      if (!this.initialized) {
-        var updater, self = this;
+    initialize: function () {
+      // build things here because this.process is not yet set in constructor or builder
+      var updater, self = this;
 
-        this.process.conf.forEach((type, name) => {
-          this['update' + name.capitalize()] = process => {
-            var node = this.node.$('.process-conf-' + name);
-            if (type === 'text') {
-              node.value = process[name];
-            } else if (type === 'bool') {
-              node.checked = process[name];
-            }
-          };
-
-          updater = this['update' + name.capitalize()];
-
+      this.process.conf.forEach((type, name) => {
+        this['update' + name.capitalize()] = process => {
+          var node = this.node.$('.process-conf-' + name);
           if (type === 'text') {
-            this.dataNode.grab(
-              new Element('p').adopt(
-                new Element('span', { text: name + ': ' } ),
-                new Element('input', {
-                  class: 'process-conf-' + name,
-                  type: 'text',
-                  events: {
-                    input: function () {
-                      self.process[name] = this.value;
-                      self.process.save();
-                      wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
-                    }
-                  }
-                })
-              )
-            );
+            node.value = process[name];
           } else if (type === 'bool') {
-            this.dataNode.grab(
-              new Element('p').adopt(
-                new Element('span', { text: name + ': ' } ),
-                new Element('input', {
-                  class: 'process-conf-' + name,
-                  type: 'checkbox',
-                  events: {
-                    click: function () {
-                      self.process[name] = this.checked;
-                      self.process.save();
-                      wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
-                    }
-                  }
-                })
-              )
-            );
+            node.checked = process[name];
           }
+        };
 
-          updater(this.process);
-          wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
-        });
+        updater = this['update' + name.capitalize()];
 
-        this.node.classList.remove('empty');
-        this.initialized = true;
-      }
+        if (type === 'text') {
+          this.dataNode.grab(
+            new Element('p').adopt(
+              new Element('span', { text: name + ': ' } ),
+              new Element('input', {
+                class: 'process-conf-' + name,
+                type: 'text',
+                events: {
+                  input: function () {
+                    self.process[name] = this.value;
+                    self.process.save();
+                    wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
+                  }
+                }
+              })
+            )
+          );
+        } else if (type === 'bool') {
+          this.dataNode.grab(
+            new Element('p').adopt(
+              new Element('span', { text: name + ': ' } ),
+              new Element('input', {
+                class: 'process-conf-' + name,
+                type: 'checkbox',
+                events: {
+                  click: function () {
+                    self.process[name] = this.checked;
+                    self.process.save();
+                    wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
+                  }
+                }
+              })
+            )
+          );
+        }
+
+        updater(this.process);
+        wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
+      });
+
+      this.node.classList.remove('empty');
     }
   });
 
@@ -89,7 +87,7 @@
     displayName: 'Execute',
     nin: 0,
     nout: 0,
-    defaultValue: null,
+    nosave: true,
 
     builder: function () {
       var self = this;
@@ -97,12 +95,12 @@
         text: 'Execute',
         events: {
           click: function () {
-            self.process.execute();
+            self.process.execute(true);
           }
         }
       })
     }
   })
-  
+
 
 })(this);

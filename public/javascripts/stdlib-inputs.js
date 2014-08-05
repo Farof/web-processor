@@ -46,8 +46,7 @@
             value: str || '',
             events: {
               input: function () {
-                self.value = Array.from(self.dataNode.$$('.list-item')).map(input => input.value);
-                wp.dispatchEvent(self.uuid + ':value:changed', self.value);
+                wp.dispatchEvent(self.uuid + ':value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
               }
             }
           }),
@@ -58,8 +57,7 @@
               click: function () {
                 this.parentNode.unload();
                 self.process.canvas.update();
-                self.value = Array.from(self.dataNode.$$('.list-item')).map(input => input.value);
-                wp.dispatchEvent(self.uuid + ':value:changed', self.value);
+                wp.dispatchEvent(self.uuid + ':value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
               }
             }
           })
@@ -69,14 +67,13 @@
       this.add = str => {
         var i = this.buildInput();
         this.dataNode.grab(i);
-        this.process.canvas.update();
         i.$('.list-item').focus();
+        this.process.canvas.update();
       };
     },
 
     builder: function () {
       var self = this;
-      console.log(this.value);
       return [
         new Element('button', {
           text: 'add',
