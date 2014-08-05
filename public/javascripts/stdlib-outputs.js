@@ -29,7 +29,7 @@
             opt.unload();
 
             if (select.value !== oldValue) {
-              wp.dispatchEvent(this.uuid + ':value:changed', { view: select.value, mode: this.value.mode });
+              this.dispatchEvent('value:changed', { view: select.value, mode: this.value.mode });
             }
             break;
           }
@@ -42,7 +42,7 @@
           text: view.name
         });
 
-        wp.addEventListener(view.uuid + ':name:changed', view => {
+        view.addEventListener('name:changed', view => {
           opt.textContent = view.name;
         });
 
@@ -54,22 +54,18 @@
         select.grab(opt);
       };
 
-      // wp.addEventListener(this.uuid + ':value:changed', newValue => {
-        // console.log(this.oldValue, this.value);
-      // });
-
       this.onUpstreamError = () => {
         var view = wp.View.items.get(this.value.view);
         if (view) view.workspace.empty();
       };
 
-      wp.addEventListener(this.uuid + ':upstream:error', this.onUpstreamError);
+      this.addEventListener('upstream:error', this.onUpstreamError);
       wp.addEventListener('View:new', this.viewAdded);
       wp.addEventListener('View:destroy', this.viewRemoved);
     },
 
     destroyer: function () {
-      wp.removeEventListener(this.uuid + ':upstream:error', this.onUpstreamError);
+      this.removeEventListener('upstream:error', this.onUpstreamError);
       wp.removeEventListener('View:new', this.viewAdded);
       wp.removeEventListener('View:destroy', this.viewRemoved);
     },
@@ -82,7 +78,7 @@
         value: this.value.view,
         events: {
           change: function (ev) {
-            wp.dispatchEvent(self.uuid + ':value:changed', { view: this.value, mode: self.value.mode });
+            self.dispatchEvent('value:changed', { view: this.value, mode: self.value.mode });
           }
         }
       }).grab(new Element('option', {
@@ -96,7 +92,7 @@
         class: 'view-mode',
         events: {
           change: function () {
-            wp.dispatchEvent(self.uuid + ':value:changed', { view: self.value.view, mode: this.value });
+            self.dispatchEvent('value:changed', { view: self.value.view, mode: this.value });
           }
         }
       }).adopt(

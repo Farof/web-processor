@@ -84,7 +84,7 @@
 
   WPObj.prototype.destroy = function () {
     wp.dispatchEvent(this.type.name + ':destroy', this);
-    wp.removeEventListener(this.uuid + ':name:changed');
+    this.removeEventListener('name:changed');
 
     if (this.objNode) this.objNode.unload();
     if (this.contentNode) this.contentNode.unload();
@@ -157,7 +157,7 @@
                 self.show();
               }
               self.save();
-              wp.dispatchEvent(self.uuid + ':name:changed', self);
+              self.dispatchEvent('name:changed', self);
             }
           }
         }
@@ -174,7 +174,7 @@
       }
     }
 
-    wp.addEventListener(this.uuid + ':name:changed', obj => {
+    this.addEventListener('name:changed', obj => {
       node.$('.item-name').textContent = obj.name;
     });
 
@@ -235,7 +235,7 @@
       })
     );
 
-    wp.addEventListener(this.uuid + ':name:changed', obj => {
+    this.addEventListener('name:changed', obj => {
       node.$('.item-name').textContent = obj.name;
     });
 
@@ -246,5 +246,7 @@
 
     return node;
   };
+  
+  Evented(WPObj);
 
 })(this);

@@ -21,7 +21,7 @@
         value: this.value,
         events: {
           input: function () {
-            wp.dispatchEvent(self.uuid + ':value:changed', this.value);
+            self.dispatchEvent('value:changed', this.value);
           }
         }
       })
@@ -46,7 +46,7 @@
             value: str || '',
             events: {
               input: function () {
-                wp.dispatchEvent(self.uuid + ':value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
+                self.dispatchEvent('value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
               }
             }
           }),
@@ -57,7 +57,7 @@
               click: function () {
                 this.parentNode.unload();
                 self.process.canvas.update();
-                wp.dispatchEvent(self.uuid + ':value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
+                self.dispatchEvent('value:changed', Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
               }
             }
           })

@@ -11,9 +11,20 @@
     listNode: node,
     name: 'TestControl',
     displayName: 'Test',
-    nin: -1,
-    nout: 0,
-    nosave: true
+    nin: 1,
+    nout: -1,
+    nosave: true,
+    bindings: {
+      'test-binding': {}
+    },
+
+    builder: function () {
+      return new Element('select', { class: 'test-binding' }).adopt(
+        new Element('option', { value: 'a', text: 'x2' }),
+        new Element('option', { value: 'b', text: 'x4' }),
+        new Element('option', { value: 'c', text: 'x8' })
+      );
+    }
   });
 
   wp.LibraryType.ProcessConf = new wp.LibraryType({
@@ -26,7 +37,7 @@
 
     destroyer: function () {
       for (var [name, type] of this.process.conf) {
-        wp.removeEventListener([this.process.uuid, name, 'changed'].join(':'), this['update' + name.capitalize()]);
+        this.process.removeEventListener(name + ':changed', this['update' + name.capitalize()]);
       }
     },
 
@@ -46,6 +57,12 @@
 
         updater = this['update' + name.capitalize()];
 
+        function onChange() {
+          self.process[name] = this.value;
+          self.process.save();
+          self.process.dispatchEvent(name + ':changed', self.process);
+        }
+
         if (type === 'text') {
           this.dataNode.grab(
             new Element('p').adopt(
@@ -53,13 +70,7 @@
               new Element('input', {
                 class: 'process-conf-' + name,
                 type: 'text',
-                events: {
-                  input: function () {
-                    self.process[name] = this.value;
-                    self.process.save();
-                    wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
-                  }
-                }
+                events: { input: onChange }
               })
             )
           );
@@ -70,20 +81,14 @@
               new Element('input', {
                 class: 'process-conf-' + name,
                 type: 'checkbox',
-                events: {
-                  click: function () {
-                    self.process[name] = this.checked;
-                    self.process.save();
-                    wp.dispatchEvent([self.process.uuid, name, 'changed'].join(':'), self.process);
-                  }
-                }
+                events: { click: onChange }
               })
             )
           );
         }
 
         updater(this.process);
-        wp.addEventListener([this.process.uuid, name, 'changed'].join(':'), updater);
+        this.process.addEventListener(name + ':changed', updater);
       });
 
       this.node.classList.remove('empty');

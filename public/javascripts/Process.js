@@ -20,6 +20,7 @@
         this.workspace.grab(node);
 
         item.process = this;
+        if (wp.initialized) item.initialize();
         this.items.set(item.uuid, item);
 
         this.save();
@@ -45,7 +46,7 @@
 
         for (var [uuid, item] of this.items) {
           for (var out of (co[uuid] || [])) {
-            wp.dispatchEvent(item.uuid + ':link', this.items.get(out), item);
+            item.dispatchEvent('link', this.items.get(out), item);
           }
         }
       };
@@ -64,9 +65,9 @@
         }, []));
       };
 
-      wp.addEventListener(this.uuid + ':autoexec:changed', process => {
+      this.addEventListener('autoexec:changed', process => {
         if (process.autoexec) this.execute();
-      })
+      });
     },
 
     serializer: function Process_serializer() {
@@ -115,9 +116,14 @@
       }
 
       function mousedown(ev) {
-        if (ev.altKey && c_conf.hoverLink) {
-          wp.dispatchEvent(c_conf.hoverLink.source.wpobj.uuid + ':unlink', c_conf.hoverLink.target.wpobj, c_conf.hoverLink.source.wpobj);
-          c_update();
+        if (c_conf.hoverLink) {
+          if (ev.altKey) {
+            var source = c_conf.hoverLink.source.wpobj;
+            source.dispatchEvent('unlink', c_conf.hoverLink.target.wpobj, source);
+            c_update();
+          } else {
+            console.log('show link info');
+          }
         }
       }
 
@@ -226,7 +232,6 @@
         document.addEventListener('mouseup', c_stopLink);
 
         c_conf.linkFrom = ev.target.getParent('.content-item');
-
         linkingOn();
       }
 
@@ -240,13 +245,11 @@
 
         var start = c_conf.linkFrom, target = c_conf.hover;
         if (target && target !== start && target.wpobj.canAcceptLink(start)) {
-          wp.dispatchEvent(start.wpobj.uuid + ':link', target.wpobj, start.wpobj);
+          start.wpobj.dispatchEvent('link', target.wpobj, start.wpobj);
         }
 
         delete c_conf.linkFrom;
-
         linkingOff();
-
         c_update();
       }
 
@@ -305,7 +308,9 @@
           wp.draw._conf(ctx, { shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
           c_link(x, y, xx, yy, a, dir);
           wp.draw._conf(ctx, { shadowBlur: shadowBlur, shadowColor: shadowColor });
+          self.workspace.classList.add('clickable');
         } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
+          self.workspace.classList.remove('clickable');
           delete c_conf.hoverLink;
         }
       }
