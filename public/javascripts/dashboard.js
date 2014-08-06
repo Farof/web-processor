@@ -7,9 +7,30 @@
 
   var wp = exports.wp = {
     initialized: false,
-    proxyURL: '/proxy?url='
+    proxyURL: '/proxy?url=',
+
+    cleanStorage: function () {
+      var objects = [], exists = [];
+
+      for (var key in localStorage) {
+        if (key.indexOf('wp-obj') > -1) objects.push(key);
+      }
+
+      JSON.parse(localStorage['wp-type-View']).forEach(uuid => exists.push('wp-obj-' + uuid));
+      JSON.parse(localStorage['wp-type-Process']).forEach(uuid => exists.push('wp-obj-' + uuid));
+
+      console.log('valid storage objects keys: ', exists);
+
+      for (var obj of objects) {
+        if (!exists.contains(obj)) {
+          delete localStorage[obj];
+        } else {
+          console.log('keep object entry: ', obj);
+        }
+      }
+    }
   };
-  
+
   Evented(wp);
 
   document.addEventListener('DOMContentLoaded', function () {

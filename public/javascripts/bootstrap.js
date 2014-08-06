@@ -5,7 +5,7 @@
     wp.Process.new({ name: 'process 1' }).show();
     wp.View.new({ name: 'view 1' }).show();
     
-    localStorage.bootstraped = true;
+    localStorage['wp-bootstraped'] = true;
   };
 
   wp.clearBootstrap = function () {
@@ -14,11 +14,11 @@
     wp.Process.save();
     wp.View.save();
 
-    localStorage.bootstraped = false;
+    localStorage['wp-bootstraped'] = false;
     window.location = window.location;
   };
   
-  if (localStorage.bootstraped !== 'true') {
+  if (localStorage['wp-bootstraped'] !== 'true') {
     document.addEventListener('DOMContentLoaded', wp.bootstrap);
   }
 

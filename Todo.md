@@ -18,3 +18,6 @@
 - move canvas related stuff in Process.js its own file
 - make items event emiters, don't use global hub
 - handle bad data persisted: junk data, behavior that shouldn't work
+- clone process to save for debug later
+- bootstrap rss & other complex process
+- passive value transfer option

@@ -46,7 +46,7 @@
 
         for (var [uuid, item] of this.items) {
           for (var out of (co[uuid] || [])) {
-            item.dispatchEvent('link', this.items.get(out), item);
+            item.link(this.items.get(out));
           }
         }
       };
@@ -61,7 +61,7 @@
 
       this.getDownstreams = function () {
         return new Set(Array.from(this.items.values()).reduce((a, b) => {
-          return a.concat(b.downstreams.size > 0 ? Array.from(b.getUniqueDownstreams()) : b);
+          return a.concat(b.out.size > 0 ? Array.from(b.getUniqueDownstreams()) : b);
         }, []));
       };
 
@@ -118,11 +118,10 @@
       function mousedown(ev) {
         if (c_conf.hoverLink) {
           if (ev.altKey) {
-            var source = c_conf.hoverLink.source.wpobj;
-            source.dispatchEvent('unlink', c_conf.hoverLink.target.wpobj, source);
+            c_conf.hoverLink.destroy();
             c_update();
           } else {
-            console.log('show link info');
+            c_conf.hoverLink.showInfoPanel();
           }
         }
       }
@@ -218,7 +217,6 @@
 
       function c_update(ev) {
         c_clear();
-        // if (c_conf.cursor.in) c_cursor();
         if (c_conf.cursor.in && c_conf.linkFrom) c_drawNewLink(ev);
         c_drawLinks(ev);
       }
@@ -228,24 +226,18 @@
       }
 
       function c_startLink(ev) {
-        document.addEventListener('mousemove', c_moveLink);
         document.addEventListener('mouseup', c_stopLink);
 
-        c_conf.linkFrom = ev.target.getParent('.content-item');
+        c_conf.linkFrom = ev.target.getParent('.content-item').wpobj;
         linkingOn();
       }
 
-      function c_moveLink(ev) {
-
-      }
-
       function c_stopLink(ev) {
-        document.removeEventListener('mousemove', c_moveLink);
         document.removeEventListener('mouseup', c_stopLink);
 
         var start = c_conf.linkFrom, target = c_conf.hover;
-        if (target && target !== start && target.wpobj.canAcceptLink(start)) {
-          start.wpobj.dispatchEvent('link', target.wpobj, start.wpobj);
+        if (target && target !== start && target.canAcceptLink(start)) {
+          start.link(target);
         }
 
         delete c_conf.linkFrom;
@@ -270,13 +262,6 @@
         }
       }
 
-      function c_cursor() {
-        wp.draw.circle(ctx, c_conf, c_conf.cursor.x, c_conf.cursor.y, 5, {
-          strokeStyle: 'grey',
-          lineWidth: 1
-        }, true)
-      }
-
       function c_link(x, y, xx, yy, a, dir) {
         var hover;
 
@@ -292,7 +277,8 @@
         return hover;
       }
 
-      function c_drawLink(source, target, ev) {
+      function c_drawLink(link, ev) {
+        var source = link.source.node, target = link.target.node;
         var { a, dir, x, y, xx, yy } = c_getLinkInfo(
           source.offsetTop, source.offsetLeft + source.offsetWidth,
           source.offsetTop + source.offsetHeight, source.offsetLeft,
@@ -303,13 +289,13 @@
         // if hover link, set variables and redraw with blur
         if (c_link(x, y, xx, yy, a, dir) && !c_conf.linkFrom) {
           var { shadowBlur, shadowColor } = ctx;
-          c_conf.hoverLink = { source: source, target: target };
+          c_conf.hoverLink = link;
 
           wp.draw._conf(ctx, { shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
           c_link(x, y, xx, yy, a, dir);
           wp.draw._conf(ctx, { shadowBlur: shadowBlur, shadowColor: shadowColor });
           self.workspace.classList.add('clickable');
-        } else if (c_conf.hoverLink && c_conf.hoverLink.source === source && c_conf.hoverLink.target === target) {
+        } else if (c_conf.hoverLink === link) {
           self.workspace.classList.remove('clickable');
           delete c_conf.hoverLink;
         }
@@ -319,25 +305,23 @@
         var target = c_conf.hover;
 
         // sometimes a bug where target.wpobj is not defined ?
-        if (!target || target === c_conf.linkFrom || !target.wpobj.canAcceptLink(c_conf.linkFrom.wpobj)) {
+        if (!target || target === c_conf.linkFrom || !target.canAcceptLink(c_conf.linkFrom)) {
           var pos = canvas.getBoundingClientRect();
           target = {
-            offsetLeft: ev.clientX - pos.left,
-            offsetTop: ev.clientY - pos.top,
-            offsetWidth: 0,
-            offsetHeight: 0
+            node: {
+              offsetLeft: ev.clientX - pos.left,
+              offsetTop: ev.clientY - pos.top,
+              offsetWidth: 0,
+              offsetHeight: 0
+            }
           };
         }
 
-        c_drawLink(c_conf.linkFrom, target, ev);
+        c_drawLink({ source: c_conf.linkFrom, target: target }, ev);
       }
 
       function c_drawLinks(ev) {
-        for (var [uuid, item] of self.items) {
-          for (var out of item.out) {
-            c_drawLink(item.node, out.node, ev);
-          }
-        }
+        self.items.forEach(item => item.out.forEach(c_drawLink));
       }
 
       this.workspace.addEvents({
@@ -355,7 +339,6 @@
       });
       var ctx = canvas.getContext('2d');
       canvas.startLink = c_startLink;
-      canvas.moveLink = c_moveLink;
       canvas.stopLink = c_stopLink;
       canvas.update = c_update;
 

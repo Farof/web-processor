@@ -29,7 +29,7 @@
             opt.unload();
 
             if (select.value !== oldValue) {
-              this.dispatchEvent('value:changed', { view: select.value, mode: this.value.mode });
+              this.setValue({ view: select.value, mode: this.value.mode });
             }
             break;
           }
@@ -78,7 +78,7 @@
         value: this.value.view,
         events: {
           change: function (ev) {
-            self.dispatchEvent('value:changed', { view: this.value, mode: self.value.mode });
+            self.setValue({ view: this.value, mode: self.value.mode });
           }
         }
       }).grab(new Element('option', {
@@ -92,7 +92,7 @@
         class: 'view-mode',
         events: {
           change: function () {
-            self.dispatchEvent('value:changed', { view: self.value.view, mode: this.value });
+            self.setValue({ view: self.value.view, mode: this.value });
           }
         }
       }).adopt(

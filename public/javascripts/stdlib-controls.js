@@ -13,17 +13,28 @@
     displayName: 'Test',
     nin: 1,
     nout: -1,
-    nosave: true,
+    defaultValue: 2,
+
     bindings: {
       'test-binding': {}
     },
 
     builder: function () {
-      return new Element('select', { class: 'test-binding' }).adopt(
-        new Element('option', { value: 'a', text: 'x2' }),
-        new Element('option', { value: 'b', text: 'x4' }),
-        new Element('option', { value: 'c', text: 'x8' })
+      var self = this;
+      return new Element('select', {
+        class: 'test-binding',
+        events: {
+          change: function () { self.setValue(this.value); }
+        }
+      }).adopt(
+        new Element('option', { value: 2, text: 'x2', selected: this.value == 2 }),
+        new Element('option', { value: 4, text: 'x4', selected: this.value == 4 }),
+        new Element('option', { value: 8, text: 'x8', selected: this.value == 8 })
       );
+    },
+
+    execute: function (values) {
+      return Promise.resolve(values.map(value => Number(value) * this.node.$('.test-binding').value));
     }
   });
 

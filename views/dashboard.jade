@@ -3,6 +3,7 @@ extends layout
 block content
 
   div(id='debug')
+    button(onclick='wp.cleanStorage()') clean
     button(onclick='wp.bootstrap()') bootstrap
     button(onclick='wp.clearBootstrap()') clear
 
@@ -36,6 +37,7 @@ block content
   script(type='application/javascript' src='/javascripts/Process.js')
   script(type='application/javascript' src='/javascripts/View.js')
   script(type='application/javascript' src='/javascripts/LibraryItem.js')
+  script(type='application/javascript' src='/javascripts/Link.js')
   script(type='application/javascript' src='/javascripts/stdlib-controls.js')
   script(type='application/javascript' src='/javascripts/stdlib-inputs.js')
   script(type='application/javascript' src='/javascripts/stdlib-operators.js')

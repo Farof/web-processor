@@ -5,25 +5,10 @@
   var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value }) {
     this.uuid = _uuid || uuid();
     this.type = type;
-    this.in = new Set();
-    this.out = new Set();
-    this.downstreams = new Map();
+    this.in = new Map();
+    this.out = new Map();
     this.value = value || this.type.defaultValue;
     this.initialized = false;
-
-    this.addEventListener('value:changed', newValue => {
-      this.oldValue = this.value;
-      this.value = newValue;
-      this.process.save();
-      if (wp.initialized) this.updateDownstreams();
-    });
-
-    this.addEventListener('link', this.onLink);
-    this.addEventListener('unlink', this.onUnlink);
-    this.addEventListener('linked', this.onLinked);
-    this.addEventListener('unlinked', this.onUnlinked);
-    this.onDownstreamLink = this.onDownstreamLink.bind(this);
-    this.onDownstreamUnlink = this.onDownstreamUnlink.bind(this);
 
     if (this.type.constructor) this.type.constructor.call(this);
 
@@ -38,11 +23,19 @@
     }
   };
 
+  LibraryItem.prototype.setValue = function (newValue) {
+    this.oldValue = this.value;
+    this.value = newValue;
+    this.process.save();
+    this.dispatchEvent('value:changed', this.value);
+    if (wp.initialized) this.updateDownstreams();
+  };
+
   LibraryItem.prototype.serialize = function () {
     return {
       uuid: this.uuid,
       type: this.type.name,
-      out: Array.from(this.out).map(o => o.uuid),
+      out: Array.from(this.out.keys()).map(target => target.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
       value: this.type.nosave ? null : this.value
@@ -52,25 +45,10 @@
   LibraryItem.prototype.buildNode = function () {
     var startX, startY, left, top, self = this;
 
-    function dragstart(ev) {
-      if (ev.shiftKey || ev.altKey) return;
-      ev.stop();
-
-      node.parentNode.grab(node);
-
-      left = node.offsetLeft;
-      top = node.offsetTop;
-      startX = ev.clientX;
-      startY = ev.clientY;
-
-      document.addEventListener('mousemove', drag);
-      document.addEventListener('mouseup', dragstop);
-    }
-
     function drag(ev) {
       node.setLeft((left + ev.clientX - startX) / node.parentNode.clientWidth * 100);
       node.setTop((top + ev.clientY - startY) / node.parentNode.clientHeight * 100);
-      node.wpobj.process.canvas.update();
+      self.process.canvas.update();
     }
 
     function dragstop(ev) {
@@ -81,16 +59,7 @@
       node.setTop(Math.trunc((top + ev.clientY - startY) / node.parentNode.clientHeight * 100));
 
       self.process.save();
-      node.wpobj.process.canvas.update();
-    }
-
-    function mousedown(ev) {
-      if (ev.altKey) {
-        self.process.removeItem(self);
-      } else if (ev.shiftKey && self.canEmitLink()) {
-        ev.stop();
-        self.process.canvas.startLink(ev);
-      }
+      self.process.canvas.update();
     }
 
     this.dataNode = new Element('div', {
@@ -104,9 +73,16 @@
         top: top + 'px'
       },
       events: {
-        mousedown: mousedown,
+        mousedown: function (ev) {
+          if (ev.altKey) {
+            self.process.removeItem(self);
+          } else if (ev.shiftKey && self.canEmitLink()) {
+            ev.stop();
+            self.process.canvas.startLink(ev);
+          }
+        },
         mouseenter: function () {
-          self.process.c_conf.hover = node;
+          self.process.c_conf.hover = self;
           // console.log(self.value);
         },
         mouseleave: function () { self.process.c_conf.hover = null; }
@@ -119,7 +95,20 @@
       new Element('h4', {
         text: this.type.displayName,
         events: {
-          mousedown: dragstart
+          mousedown: function (ev) {
+            if (ev.shiftKey || ev.altKey) return;
+            ev.stop();
+
+            node.parentNode.grab(node);
+
+            left = node.offsetLeft;
+            top = node.offsetTop;
+            startX = ev.clientX;
+            startY = ev.clientY;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragstop);
+          }
         }
       }).grab(
         new Element('span', {
@@ -156,13 +145,8 @@
     this.destroying = true;
     wp.dispatchEvent('process-item:destroy', this);
 
-    this.out.forEach(target => this.dispatchEvent('unlink', target, this));
-    this.in.forEach(source => source.dispatchEvent('unlink', this, source));
-
-    this.removeEventListener('link');
-    this.removeEventListener('unlink');
-    this.removeEventListener('linked');
-    this.removeEventListener('unlinked');
+    this.out.forEach(link => link.destroy(true));
+    this.in.forEach(link => link.destroy(true));
 
     if (this.type.destroyer) this.type.destroyer.call(this);
     delete this.process;
@@ -176,76 +160,17 @@
   };
 
   LibraryItem.prototype.canAcceptLink = function (source) {
-    return (this.type.nin === -1 && !this.in.has(source)) || (this.type.nin === 1 && this.in.size < 1);
+    return (this.type.nin === -1 && !new Set(this.in.keys()).has(source)) || (this.type.nin === 1 && this.in.size < 1);
   };
 
-  LibraryItem.prototype.onLink = function (target) {
-    this.out.add(target);
-
-    if (target.downstreams.size > 0) {
-      this.downstreams.set(target.uuid, target.getUniqueDownstreams());
-    } else {
-      this.downstreams.set(target.uuid, new Set([target]));
-    }
-
-    target.addEventListener('link', this.onDownstreamLink);
-
-    target.dispatchEvent('linked', this);
-    if (wp.initialized) {
-      this.validate();
-      this.process.save();
-    }
-  };
-
-  LibraryItem.prototype.onUnlink = function (target) {
-    this.out.delete(target);
-    this.downstreams.delete(target.uuid);
-
-    target.removeEventListener('link', this.onDownstreamLink);
-
-    target.dispatchEvent('unlinked', this);
-    if (wp.initialized && !this.destroying) {
-      this.validate();
-      this.process.save();
-    }
-  };
-
-  LibraryItem.prototype.onLinked = function (source) {
-    this.in.add(source);
-
-    if (wp.initialized) {
-      this.validate();
-      this.updateDownstreams();
-    }
-  };
-
-  LibraryItem.prototype.onUnlinked = function (source) {
-    this.in.delete(source);
-    if (wp.initialized && !this.destroying) {
-      this.validate();
-      this.updateDownstreams();
-    }
-  };
-
-  LibraryItem.prototype.onDownstreamLink = function (target, downstream) {
-    this.downstreams.set(
-      downstream.uuid,
-      new Set(Array.from(downstream.downstreams.values()).reduce((a, b) => a.concat(Array.from(b)), []))
-    );
-    this.in.forEach(i => i.onDownstreamLink(downstream, this));
-  };
-
-  LibraryItem.prototype.onDownstreamUnlink = function (target, downstream) {
-    if (downstream.downstreams.size > 0) {
-      this.downstreams.set(downstream.uuid, downstream.getUniqueDownstreams());
-    } else {
-      this.downstreams.set(downstream.uuid, new Set([downstream]));
-    }
-    this.in.forEach(i => i.onDownstreamUnlink(downstream, this));
+  LibraryItem.prototype.link = function (target) {
+    this.dispatchEvent('link', new wp.Link(this, target));
   };
 
   LibraryItem.prototype.getUniqueDownstreams = function () {
-    return new Set(Array.from(this.downstreams.values()).reduce((a, b) => a.concat(Array.from(b)), []))
+    return new Set(Array.from(Array.from(this.out.keys()).map(target => {
+      return target.out.size ? target.getUniqueDownstreams() : target;
+    }))).flatten2();
   };
 
   LibraryItem.prototype.getAllUpdates = function (sources, manual) {
@@ -253,7 +178,7 @@
   };
 
   LibraryItem.prototype.updateDownstreams = function () {
-    if (this.downstreams.size > 0) {
+    if (this.out.size) {
       return Promise.all(this.getAllUpdates(this.getUniqueDownstreams()));
     } else {
       return this.update();
@@ -261,7 +186,6 @@
   };
 
   LibraryItem.prototype.update = function (manual) {
-    // console.log('update: ', this.type.name, this.node, this.updateInProgress);
     var p = this.updateInProgress || (this.updateInProgress = new Promise((resolve, reject) => {
 
       if (this.process.autoexec || manual) {
@@ -269,7 +193,7 @@
           if (this.in.size === 0) {
             this.execute(this.value).then(resolve, reject);
           } else {
-            Promise.all(this.getAllUpdates(this.in.values(), manual)).then(values => {
+            Promise.all(this.getAllUpdates(this.in.keys(), manual)).then(values => {
               this.execute(values).then(resolve, reject);
             }, err => {
               this.validate('upstream error: ' + err);
@@ -293,7 +217,7 @@
   };
 
   LibraryItem.prototype.execute = function (values) {
-    return values ? new Promise((resolve, reject) => {
+    return (values !== undefined) ? new Promise((resolve, reject) => {
       if (this.type.execute) this.type.execute.call(this, values).then(resolve, reject);
       else resolve(this.value);
     }) : Promise.reject('value was undefined');
@@ -314,11 +238,11 @@
     return !err;
   };
 
-  Evented(wp.LibraryItem);
+  Evented(LibraryItem);
 
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
-    builder, constructor, initialize, destroyer, execute, validator, defaultValue }) {
+    builder, constructor, initialize, destroyer, execute, validator, defaultValue, bindings }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = typeof nin === 'number' ? nin : -1;
@@ -331,6 +255,7 @@
     this.execute = execute;
     this.validator = validator;
     this.defaultValue = defaultValue;
+    this.bindings = bindings;
 
     listNode.grab(
       new Element('p', {
@@ -338,7 +263,7 @@
         text: displayName,
         draggable: true,
         events: {
-          dragstart: function dragstart(ev) {
+          dragstart: function (ev) {
             ev.dataTransfer.setData('application/x-wp-library-item', name);
           }
         }

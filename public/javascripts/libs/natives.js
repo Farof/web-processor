@@ -336,6 +336,18 @@
     }
   });
 
+  /* Set */
+  Object.defineProperties(Set.prototype, {
+    flatten2: {
+      enumerable: true,
+      value: function (recursive) {
+        return new Set(Array.from(this).reduce((a, b) => {
+          return a.concat(b instanceof Set ? Array.from(recursive ? b.flatten2(recursive) : b) : [b]);
+        }, []));
+      }
+    }
+  });
+
   /* HTMLDocument.prototype */
   Object.defineProperties(HTMLDocument.prototype, {
     $: {
