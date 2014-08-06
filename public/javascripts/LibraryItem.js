@@ -2,12 +2,13 @@
   "use strict";
 
   // library items
-  var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value }) {
+  var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value, params }) {
     this.uuid = _uuid || uuid();
     this.type = type;
     this.in = new Map();
     this.out = new Map();
     this.value = value || this.type.defaultValue;
+    this.params = new Map(params || this.type.params.map(param => [param.name, param.defaultValue]));
     this.initialized = false;
 
     if (this.type.constructor) this.type.constructor.call(this);
@@ -31,6 +32,13 @@
     if (wp.initialized) this.updateDownstreams();
   };
 
+  LibraryItem.prototype.setParam = function (name, value) {
+    this.params.set(name, value);
+    this.process.save();
+    this.dispatchEvent('param:changed', name, value);
+    if (wp.initialized) this.updateDownstreams();
+  };
+
   LibraryItem.prototype.serialize = function () {
     return {
       uuid: this.uuid,
@@ -38,7 +46,8 @@
       out: Array.from(this.out.keys()).map(target => target.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
-      value: this.type.nosave ? null : this.value
+      value: this.type.nosave ? null : this.value,
+      params: Array.from(this.params)
     };
   };
 
@@ -61,10 +70,6 @@
       self.process.save();
       self.process.canvas.update();
     }
-
-    this.dataNode = new Element('div', {
-      class: 'content-item-data'
-    });
 
     var node = this.node = new Element('div', {
       class: 'content-item',
@@ -118,8 +123,31 @@
         })
       ),
 
-      this.dataNode
+      (this.dataNode = new Element('div', {
+        class: 'content-item-data'
+      }))
     );
+
+    if (this.type.params) {
+      this.type.params.forEach(param => {
+        var node;
+        if (param.type === 'select') {
+          node = new Element('select', {
+            name: param.name,
+            events: { change: function () { self.setParam(this.name, this.value); } }
+          }).adopt(param.values.map(opt => {
+            return new Element('option', {
+              value: opt.value,
+              text: opt.label,
+              // == operator because value is auto-casted into string when saving
+              selected: opt.value == this.params.get(param.name)
+            })
+          }));
+
+          this.dataNode.grab(node);
+        }
+      });
+    }
 
     node.setLeft = function (left) {
       var w = node.parentNode.clientWidth;
@@ -134,7 +162,6 @@
     };
 
     if (this.type.builder) this.dataNode.adopt(this.type.builder.call(this));
-    else this.node.classList.add('empty');
 
     node.wpobj = this;
 
@@ -242,7 +269,7 @@
 
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
-    builder, constructor, initialize, destroyer, execute, validator, defaultValue, bindings }) {
+    builder, constructor, initialize, destroyer, execute, validator, defaultValue, params }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = typeof nin === 'number' ? nin : -1;
@@ -255,7 +282,7 @@
     this.execute = execute;
     this.validator = validator;
     this.defaultValue = defaultValue;
-    this.bindings = bindings;
+    this.params = params || [];
 
     listNode.grab(
       new Element('p', {

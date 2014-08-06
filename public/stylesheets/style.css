@@ -186,10 +186,6 @@ a {
   box-shadow: 0px 0px 4px red;
 }
 
-.content-item.empty {
-  border-radius: 5px;
-}
-
 .content-item.success {
   box-shadow: 0px 0px 2px green;
 }
@@ -233,7 +229,8 @@ a {
   flex-direction: column;
 }
 
-.content-item.empty > .content-item-data {
+
+.content-item-data:empty {
   padding: 0px;
 }
 

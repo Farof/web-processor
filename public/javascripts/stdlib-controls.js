@@ -13,28 +13,21 @@
     displayName: 'Test',
     nin: 1,
     nout: -1,
-    defaultValue: 2,
+    nosave: true,
 
-    bindings: {
-      'test-binding': {}
-    },
-
-    builder: function () {
-      var self = this;
-      return new Element('select', {
-        class: 'test-binding',
-        events: {
-          change: function () { self.setValue(this.value); }
-        }
-      }).adopt(
-        new Element('option', { value: 2, text: 'x2', selected: this.value == 2 }),
-        new Element('option', { value: 4, text: 'x4', selected: this.value == 4 }),
-        new Element('option', { value: 8, text: 'x8', selected: this.value == 8 })
-      );
-    },
+    params: [{
+      name: 'multiplicator',
+      type: 'select',
+      defaultValue: 2,
+      values: [
+        { value: 2, label: 'x2' },
+        { value: 4, label: 'x4' },
+        { value: 8, label: 'x8' }
+      ]
+    }],
 
     execute: function (values) {
-      return Promise.resolve(values.map(value => Number(value) * this.node.$('.test-binding').value));
+      return Promise.resolve(values.map(value => Number(value) * this.params.get('multiplicator')));
     }
   });
 
