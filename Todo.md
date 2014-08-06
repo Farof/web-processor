@@ -21,3 +21,5 @@
 - clone process to save for debug later
 - bootstrap rss & other complex process
 - passive value transfer option
+- library item creation documentation
+- core code contribution documentation

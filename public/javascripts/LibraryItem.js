@@ -33,9 +33,10 @@
   };
 
   LibraryItem.prototype.setParam = function (name, value) {
+    var old = this.params.get(name);
     this.params.set(name, value);
     this.process.save();
-    this.dispatchEvent('param:changed', name, value);
+    this.dispatchEvent('param:changed', name, value, old);
     if (wp.initialized) this.updateDownstreams();
   };
 
@@ -130,21 +131,9 @@
 
     if (this.type.params) {
       this.type.params.forEach(param => {
-        var node;
-        if (param.type === 'select') {
-          node = new Element('select', {
-            name: param.name,
-            events: { change: function () { self.setParam(this.name, this.value); } }
-          }).adopt(param.values.map(opt => {
-            return new Element('option', {
-              value: opt.value,
-              text: opt.label,
-              // == operator because value is auto-casted into string when saving
-              selected: opt.value == this.params.get(param.name)
-            })
-          }));
-
-          this.dataNode.grab(node);
+        var builder = LibraryItem.param.get(param.type);
+        if (builder) {
+          builder.call(this, param);
         }
       });
     }
@@ -170,10 +159,18 @@
 
   LibraryItem.prototype.destroy = function () {
     this.destroying = true;
-    wp.dispatchEvent('process-item:destroy', this);
+    this.dispatchEvent('destroy', this);
 
-    this.out.forEach(link => link.destroy(true));
-    this.in.forEach(link => link.destroy(true));
+    this.out.forEach(link => link.destroy());
+    this.in.forEach(link => link.destroy());
+
+    this.removeEventListener('param:changed');
+    this.removeEventListener('link');
+    this.removeEventListener('unlink');
+    this.removeEventListener('linked');
+    this.removeEventListener('unlinked');
+    this.removeEventListener('upstream:error');
+    this.removeEventListener('destroy');
 
     if (this.type.destroyer) this.type.destroyer.call(this);
     delete this.process;
@@ -191,7 +188,7 @@
   };
 
   LibraryItem.prototype.link = function (target) {
-    this.dispatchEvent('link', new wp.Link(this, target));
+    return new wp.Link(this, target);
   };
 
   LibraryItem.prototype.getUniqueDownstreams = function () {
@@ -264,6 +261,82 @@
 
     return !err;
   };
+
+  LibraryItem.param = new Map();
+
+  LibraryItem.param.set('select', function (param) {
+    function sourceAdd(source) {
+      function labelChanged(source) {
+        opt.textContent = source[label];
+      }
+
+      var opt = new Element('option', {
+        value: source[value],
+        text: source[label]
+      });
+
+      source.addEventListener(label + ':changed', labelChanged);
+
+      self.addEventListener('destroy', item => {
+        source.removeEventListener(label + ':changed', labelChanged);
+      });
+
+      if (source[value] === self.params.get(param.name)) {
+        opt.setAttribute('selected', true);
+      }
+
+      node.grab(opt);
+    }
+
+    function sourceDel(source) {
+      var oldValue = node.value;
+      for (var opt of node.children) {
+        if (opt.value === source[value]) {
+          opt.unload();
+          if (node.value !== oldValue) {
+            self.setParam(param.name, node.value);
+          }
+          break;
+        }
+      }
+    }
+
+    var self = this, node = new Element('select', {
+      name: param.name,
+      events: { change: function () { self.setParam(this.name, this.value); } }
+    });
+
+    if (param.values) {
+      node.adopt(param.values.map(opt => {
+        return new Element('option', {
+          value: opt.value,
+          text: opt.label,
+          // == operator because value is auto-casted into string when saving
+          selected: opt.value == this.params.get(param.name)
+        })
+      }));
+    }
+
+    if (param.datasource) {
+      var
+      emitter = param.datasource.emitter || wp,
+      collection = param.datasource.collection || wp[param.datasource.name].items,
+      label = param.datasource.label || 'name',
+      value = param.datasource.value || 'uuid';
+
+      emitter.addEventListener(param.datasource.name + ':new', sourceAdd);
+      emitter.addEventListener(param.datasource.name + ':destroy', sourceDel);
+
+      collection.forEach(sourceAdd);
+
+      this.addEventListener('destroy', item => {
+        emitter.removeEventListener(param.datasource.name + ':new', sourceAdd);
+        emitter.removeEventListener(param.datasource.name + ':destroy', sourceDel);
+      });
+    }
+
+    this.dataNode.grab(node);
+  });
 
   Evented(LibraryItem);
 

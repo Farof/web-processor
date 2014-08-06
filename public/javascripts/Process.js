@@ -228,7 +228,7 @@
       function c_startLink(ev) {
         document.addEventListener('mouseup', c_stopLink);
 
-        c_conf.linkFrom = ev.target.getParent('.content-item').wpobj;
+        c_conf.linkFrom = ev.target.getParent('.content-item', true).wpobj;
         linkingOn();
       }
 

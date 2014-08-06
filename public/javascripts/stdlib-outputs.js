@@ -17,108 +17,70 @@
       mode: 'text'
     },
 
+    params: [{
+      name: 'view',
+      defaultValue: '<none>',
+      type: 'select',
+      // { collection, emmiter: wp, name, value: 'uuid', label: 'name' }
+      datasource: { name: 'View' },
+      values: [
+        { value: '<none>', label: '<none>' }
+      ]
+    }, {
+      name: 'mode',
+      type: 'select',
+      defaultValue: 'text',
+      values: [
+        { value: 'text', label: 'Text' },
+        { value: 'html', label: 'HTML' },
+        { value: 'json', label: 'JSON' }
+      ]
+    }],
+
     constructor: function () {
-      this.viewAdded = view => {
-        this.addOption(this.node.$('.view-choice'), view);
-      };
-
-      this.viewRemoved = view => {
-        var select = this.node.$('.view-choice'), oldValue = select.value;
-        for (var opt of select.children) {
-          if (opt.value === view.uuid) {
-            opt.unload();
-
-            if (select.value !== oldValue) {
-              this.setValue({ view: select.value, mode: this.value.mode });
-            }
-            break;
-          }
-        }
-      };
-
-      this.addOption = (select, view) => {
-        var opt = new Element('option', {
-          value: view.uuid,
-          text: view.name
-        });
-
-        view.addEventListener('name:changed', view => {
-          opt.textContent = view.name;
-        });
-
-        if (view.uuid === this.value.view) {
-          opt.setAttribute('selected', true);
-          // if (wp.initialized) this.update();
-        }
-
-        select.grab(opt);
-      };
-
-      this.onUpstreamError = () => {
-        var view = wp.View.items.get(this.value.view);
+      this.addEventListener('upstream:error', () => {
+        var view = wp.View.items.get(this.params.get('view'));
         if (view) view.workspace.empty();
-      };
+      });
 
-      this.addEventListener('upstream:error', this.onUpstreamError);
-      wp.addEventListener('View:new', this.viewAdded);
-      wp.addEventListener('View:destroy', this.viewRemoved);
-    },
-
-    destroyer: function () {
-      this.removeEventListener('upstream:error', this.onUpstreamError);
-      wp.removeEventListener('View:new', this.viewAdded);
-      wp.removeEventListener('View:destroy', this.viewRemoved);
-    },
-
-    builder: function () {
-      var self = this;
-
-      var node = new Element('select', {
-        class: 'view-choice',
-        value: this.value.view,
-        events: {
-          change: function (ev) {
-            self.setValue({ view: this.value, mode: self.value.mode });
-          }
+      this.addEventListener('param:changed', (name, val, old) => {
+        var view;
+        if (name === 'view' && (view = wp.View.items.get(old))) {
+          view.workspace.empty();
         }
-      }).grab(new Element('option', {
-        value: '<none>',
-        text: '<none>'
-      }));
+      });
 
-      wp.View.items.forEach(view => this.addOption(node, view));
-
-      return [node, new Element('select', {
-        class: 'view-mode',
-        events: {
-          change: function () {
-            self.setValue({ view: self.value.view, mode: this.value });
-          }
+      this.addEventListener('unlinked', () => {
+        var view;
+        if (!this.in.size && (view = wp.View.items.get(this.params.get('view')))) {
+          view.workspace.empty();
         }
-      }).adopt(
-        new Element('option', { value: 'text', text: 'Text', selected: this.value.mode === 'text' }),
-        new Element('option', { value: 'html', text: 'HTML', selected: this.value.mode === 'html' }),
-        new Element('option', { value: 'json', text: 'JSON', selected: this.value.mode === 'json' })
-      )];
+      });
     },
 
     execute: function (values) {
       return new Promise(resolve => {
-        var view, mode = this.value.mode;
-
-        if (this.oldValue && (view = wp.View.items.get(this.oldValue.view))) {
-          view.workspace.empty();
+        function insertText(value) {
+          view.workspace.grab(new Element('p', { text: value }));
         }
 
-        if (view = wp.View.items.get(this.value.view)) {
+        function insertHTML(value) {
+          view.workspace.innerHTML += value;
+        }
+
+        function insertJSON(value) {
+          view.workspace.grab(new Element('p', { text: JSON.stringify(value) }));
+        }
+
+        var view = wp.View.items.get(this.params.get('view')), mode = this.params.get('mode'), insert;
+        if (view) {
           view.workspace.empty();
 
-          Array.from(values).flatten().forEach(value => {
-            // console.log('write: ', value, mode);
-            if (mode === 'text') view.workspace.grab(new Element('p', { text: value }));
-            else if (mode === 'html') view.workspace.innerHTML += value;
-            else if (mode === 'json') view.workspace.grab(new Element('p', { text: JSON.stringify(value) }));
-          });
+          if (mode === 'text') insert = insertText;
+          else if (mode === 'html') insert = insertHTML;
+          else if (mode === 'json') insert = insertJSON;
+
+          Array.from(values).flatten().forEach(insert);
         }
 
         resolve(values);
@@ -126,7 +88,7 @@
     },
 
     validator: function () {
-      if (this.value.view === this.type.defaultValue.view) {
+      if (this.params.get('view') === '<none>') {
         this.errorMessage = 'choose a view';
         return false;
       }

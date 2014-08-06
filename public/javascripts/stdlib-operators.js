@@ -14,9 +14,7 @@
     nosave: true,
 
     execute: function (values) {
-      return new Promise(resolve => {
-        resolve(Array.from(values).flatten().map(value => String(value.toLowerCase())));
-      });
+      return Promise.resolve(Array.from(values).flatten().map(value => String(value.toLowerCase())));
     }
   });
 
@@ -27,9 +25,7 @@
     nosave: true,
 
     execute: function (values) {
-      return new Promise(resolve => {
-        resolve(Array.from(values).flatten().map(value => String(value).toUpperCase()));
-      });
+      return Promise.resolve(Array.from(values).flatten().map(value => String(value).toUpperCase()));
     }
   });
 
@@ -40,11 +36,9 @@
     nosave: true,
 
     execute: function (values) {
-      return new Promise(resolve => {
-        resolve(Array.from(values).flatten().sort((a, b) => {
-          return a.toLowerCase() > b.toLowerCase();
-        }));
-      });
+      return Promise.resolve(Array.from(values).flatten().sort((a, b) => {
+        return a.toLowerCase() > b.toLowerCase();
+      }));
     }
   });
 

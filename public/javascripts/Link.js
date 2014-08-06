@@ -8,22 +8,25 @@
 
     source.out.set(target, this);
     target.in.set(source, this);
+    source.dispatchEvent('link', this);
+    target.dispatchEvent('linked', this);
 
     if (wp.initialized) {
       source.validate();
-      target.validate();
+      target.updateDownstreams();
       this.process.save();
     }
   };
 
-  Link.prototype.destroy = function (destroying) {
+  Link.prototype.destroy = function () {
     this.source.out.delete(this.target);
     this.target.in.delete(this.source);
     this.source.dispatchEvent('unlink', this.target);
+    this.target.dispatchEvent('unlinked', this.source);
 
-    if (wp.initialized && !destroying) {
-      this.source.validate();
-      this.target.validate();
+    if (wp.initialized) {
+      if (!this.source.destroying) this.source.validate();
+      if (!this.target.destroying) this.target.updateDownstreams();
       this.process.save();
     }
     delete this.source;
@@ -41,10 +44,6 @@
 
   Link.prototype.buildInfoPanel = function () {
 
-  };
-  
-  Link.bind = function (source, target) {
-    
   };
 
   Evented(Link);
