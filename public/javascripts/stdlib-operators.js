@@ -11,7 +11,6 @@
     listNode: node,
     name: 'LowerCaseOperator',
     displayName: 'LowerCase',
-    nosave: true,
 
     execute: function (values) {
       return Promise.resolve(Array.from(values).flatten().map(value => String(value.toLowerCase())));
@@ -22,7 +21,6 @@
     listNode: node,
     name: 'UpperCaseOperator',
     displayName: 'UpperCase',
-    nosave: true,
 
     execute: function (values) {
       return Promise.resolve(Array.from(values).flatten().map(value => String(value).toUpperCase()));
@@ -33,7 +31,6 @@
     listNode: node,
     name: 'OrderOperator',
     displayName: 'Order',
-    nosave: true,
 
     execute: function (values) {
       return Promise.resolve(Array.from(values).flatten().sort((a, b) => {
@@ -47,7 +44,6 @@
     name: 'RequestXML',
     displayName: 'Request XML',
     nin: 1,
-    nosave: true,
 
     constructor: function () {
       this.requests = new Map();
@@ -97,7 +93,6 @@
     name: 'parseRSS',
     displayName: 'Parse RSS',
     nin: 1,
-    nosave: true,
 
     execute: function (values) {
       return new Promise((resolve, reject) => {
@@ -128,7 +123,6 @@
     name: 'RSStoHTML',
     displayName: 'RSS to HTML',
     nin: 1,
-    nosave: true,
 
     execute: function (values) {
       return new Promise((resolve, reject) => {

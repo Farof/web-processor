@@ -13,8 +13,6 @@
     displayName: 'Test 2',
     nin: 0,
     nout: -1,
-    nosave: true,
-
     params: [{
       type: 'text'
     }]
@@ -26,8 +24,6 @@
     displayName: 'Test',
     nin: 1,
     nout: -1,
-    nosave: true,
-
     params: [{
       name: 'multiplicator',
       type: 'select',
@@ -50,7 +46,6 @@
     displayName: 'Configuration',
     nin: 0,
     nout: 0,
-    nosave: true,
 
     destroyer: function () {
       for (var [name, type] of this.process.conf) {
@@ -118,7 +113,6 @@
     displayName: 'Execute',
     nin: 0,
     nout: 0,
-    nosave: true,
 
     builder: function () {
       var self = this;

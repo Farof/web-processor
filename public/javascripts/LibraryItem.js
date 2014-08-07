@@ -7,7 +7,6 @@
     this.type = type;
     this.in = new Map();
     this.out = new Map();
-    this.value = value || this.type.defaultValue;
     this.params = new Map(params || this.type.params.map(param => [param.name || this.type.value || 'value', param.defaultValue]));
     this.initialized = false;
 
@@ -22,14 +21,6 @@
       this.initialized = true;
       this.validate();
     }
-  };
-
-  LibraryItem.prototype.setValue = function (newValue) {
-    this.oldValue = this.value;
-    this.value = newValue;
-    this.process.save();
-    this.dispatchEvent('value:changed', this.value);
-    if (wp.initialized) this.updateDownstreams();
   };
 
   LibraryItem.prototype.setParam = function (name, value) {
@@ -47,7 +38,6 @@
       out: Array.from(this.out.keys()).map(target => target.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
-      value: this.type.nosave ? null : this.value,
       params: Array.from(this.params)
     };
   };
@@ -412,20 +402,18 @@
   Evented(LibraryItem);
 
   // library item type
-  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
-    builder, constructor, initialize, destroyer, execute, validator, defaultValue, value, params }) {
+  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
+    builder, constructor, initialize, destroyer, execute, validator, value, params }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = typeof nin === 'number' ? nin : -1;
     this.nout = typeof nout === 'number' ? nout : -1;
-    this.nosave = !!nosave;
     this.builder = builder;
     this.constructor = constructor;
     this.initialize = initialize;
     this.destroyer = destroyer;
     this.execute = execute;
     this.validator = validator;
-    this.defaultValue = defaultValue;
     this.value = value;
     this.params = params || [];
 

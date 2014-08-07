@@ -40,7 +40,7 @@
 
         for (var item of items) {
           co[item.uuid] = item.out;
-          this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], value: item.value, params: item.params }))
+          this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], params: item.params }))
               .node.setLeft(item.left).setTop(item.top);
         }
 

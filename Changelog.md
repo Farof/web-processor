@@ -4,6 +4,7 @@
 
 - text param, default name to value
 - list param
+- removed libraryItem.value & nosave
 
 ## 2014-08-06
 
