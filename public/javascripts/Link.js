@@ -57,7 +57,7 @@
   };
 
   Link.prototype.hideInfoPanel = function () {
-    this.panel.unload();
+    if (this.panel) this.panel.unload();
     document.removeEventListener('click', this.hideInfoPanel);
   };
 
