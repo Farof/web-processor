@@ -23,3 +23,4 @@
 - passive value transfer option
 - library item creation documentation
 - core code contribution documentation
+- prevent path loop

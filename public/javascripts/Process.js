@@ -121,7 +121,7 @@
             c_conf.hoverLink.destroy();
             c_update();
           } else {
-            c_conf.hoverLink.showInfoPanel();
+            c_conf.hoverLink.showInfoPanel(c_conf.cursor.x, c_conf.cursor.y);
           }
         }
       }
@@ -360,6 +360,7 @@
 
       window.addEventListener('resize', function () {
         window.requestAnimationFrame(function () {
+          Array.from(self.overlay.children).forEach(panel => panel.wpobj.hideInfoPanel());
           canvas.width = self.workspace.offsetWidth;
           canvas.height = self.workspace.offsetHeight;
           canvas.update();
@@ -368,8 +369,9 @@
 
       node.grab(
         wrapper.adopt(
-          self.workspace,
-          canvas
+          this.workspace,
+          canvas,
+          (this.overlay = new Element('div', { class: 'content-overlay' }))
         )
       );
 

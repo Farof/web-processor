@@ -64,6 +64,7 @@
 
     var node = this.node = new Element('div', {
       class: 'content-item',
+      properties: { wpobj: this },
       style: {
         left: left + 'px',
         top: top + 'px'
@@ -77,15 +78,8 @@
             self.process.canvas.startLink(ev);
           }
         },
-        mouseenter: function () {
-          self.process.c_conf.hover = self;
-          // console.log(self.value);
-        },
+        mouseenter: function () { self.process.c_conf.hover = self; },
         mouseleave: function () { self.process.c_conf.hover = null; }
-      },
-      properties: {
-        // see Process.js c_drawNewLink
-        // wpobj: this
       }
     }).adopt(
       new Element('h4', {
@@ -141,8 +135,6 @@
     };
 
     if (this.type.builder) this.dataNode.adopt(this.type.builder.call(this));
-
-    node.wpobj = this;
 
     return node;
   };

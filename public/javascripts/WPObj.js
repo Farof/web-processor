@@ -122,7 +122,8 @@
     var self = this;
 
     var node = this.objNode = new Element('div', {
-      class: 'collection-item'
+      class: 'collection-item',
+      properties: { wpobj: this }
     }).adopt(
       new Element('p', { class: 'item-name-line control-container' }).adopt(
         new Element('span', { class: 'item-name', text: this.name, events: {
@@ -179,7 +180,6 @@
     });
 
     node.edit = edit;
-    node.wpobj = this;
 
     return node;
   };

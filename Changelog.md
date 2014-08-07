@@ -2,9 +2,8 @@
 
 ## 2014-08-07
 
-- text param, default name to value
-- list param
-- removed libraryItem.value & nosave
+- text param, list param, default name to value, removed libraryItem.value & nosave
+- basic link panel
 
 ## 2014-08-06
 
