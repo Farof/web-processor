@@ -3,6 +3,7 @@
 ## 2014-08-07
 
 - text param, default name to value
+- list param
 
 ## 2014-08-06
 

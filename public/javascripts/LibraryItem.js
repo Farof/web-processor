@@ -133,7 +133,7 @@
       this.type.params.forEach(param => {
         var builder = LibraryItem.param.get(param.type);
         if (builder) {
-          this.dataNode.grab(builder.call(this, param));
+          this.dataNode.adopt(builder.call(this, param));
         }
       });
     }
@@ -265,20 +265,73 @@
   LibraryItem.param = new Map();
 
   LibraryItem.param.set('text', function (param) {
-    var self = this, name = param.name || this.type.value || 'value';
+    var
+    self = this,
+    name = param.name || this.type.value || 'value',
+    value = this.params.get(name);
 
-    if (this.params.get(name) === undefined) {
-      this.params.set(name, param.defaultValue || '');
+    if (value === undefined) {
+      value = param.defaultValue || '';
+      this.params.set(name, value);
     }
 
-    var node = new Element('input', {
+    return new Element('input', {
       name: name,
       type: 'text',
-      value: this.params.get(name),
+      value: value,
       events: { input: function () { self.setParam(this.name, this.value); } }
     });
+  });
 
-    return node;
+  LibraryItem.param.set('list', function (param) {
+    function save() {
+      self.setParam(name, Array.from(self.dataNode.$$('input')).map(input => input.value));
+    }
+
+    function buildInput(value) {
+      return new Element('p').adopt(
+        new Element('input', {
+          type: 'text',
+          value: value || '',
+          events: {
+            input: save
+          }
+        }),
+
+        new Element('button', {
+          text: param.delLabel || 'delete',
+          events: {
+            click: function () {
+              this.parentNode.unload();
+              self.process.canvas.update();
+              save();
+            }
+          }
+        })
+      );
+    }
+
+    var
+    self = this,
+    name = param.name || this.type.value || 'value',
+    value = this.params.get(name);
+
+    if (!value) {
+      value = param.defaultValue || [];
+      this.params.set(name, value);
+    }
+
+    return [new Element('button', {
+      text: param.addLabel || 'add',
+      events: {
+        click: function () {
+          var line = buildInput();
+          this.parentNode.grab(line);
+          line.$('input').focus();
+          self.process.canvas.update();
+        }
+      }
+    })].concat(value.map(buildInput));
   });
 
   LibraryItem.param.set('select', function (param) {

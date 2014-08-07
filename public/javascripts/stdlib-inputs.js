@@ -20,56 +20,7 @@
     name: 'ListInput',
     displayName: 'List',
     nin: 0,
-    defaultValue: '',
-
-    constructor: function () {
-      var self = this;
-      if (this.value === '') this.value = [];
-
-      this.buildInput = str => {
-        return new Element('p').adopt(
-          new Element('input', {
-            class: 'list-item',
-            value: str || '',
-            events: {
-              input: function () {
-                self.setValue(Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
-              }
-            }
-          }),
-
-          new Element('button', {
-            text: 'delete',
-            events: {
-              click: function () {
-                this.parentNode.unload();
-                self.process.canvas.update();
-                self.setValue(Array.from(self.dataNode.$$('.list-item')).map(input => input.value));
-              }
-            }
-          })
-        );
-      };
-
-      this.add = str => {
-        var i = this.buildInput();
-        this.dataNode.grab(i);
-        i.$('.list-item').focus();
-        this.process.canvas.update();
-      };
-    },
-
-    builder: function () {
-      var self = this;
-      return [
-        new Element('button', {
-          text: 'add',
-          events: {
-            click: function () { self.add(); }
-          }
-        })
-      ].concat(this.value.map(this.buildInput));
-    }
+    params: [{ type: 'list' }]
   });
 
 })(this);
