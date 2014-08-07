@@ -179,27 +179,27 @@
       }
 
       function linkModeOn() {
-        Array.from(self.workspace.$$('.content-item')).forEach(node => {
-          if (!node.wpobj.canEmitLink()) node.classList.add('fade');
-          else node.classList.remove('fade');
+        self.items.forEach(item => {
+          if (!item.canEmitLink()) item.node.classList.add('fade');
+          else item.node.classList.remove('fade');
         });
       }
 
       function linkModeOff() {
         if (!c_conf.linkFrom) {
-          Array.from(self.workspace.$$('.content-item')).forEach(node => {
-            node.classList.remove('fade');
+          self.items.forEach(item => {
+            item.node.classList.remove('fade');
           });
         }
       }
 
       function linkingOn() {
-        Array.from(self.workspace.$$('.content-item')).forEach(node => {
-          if (node === c_conf.linkFrom) {}
-          else if (node.wpobj.canAcceptLink(c_conf.linkFrom.wpobj)) {
-            node.classList.remove('fade');
+        self.items.forEach(item => {
+          if (item === c_conf.linkFrom) {}
+          else if (item.canAcceptLink(c_conf.linkFrom)) {
+            item.node.classList.remove('fade');
           } else {
-            node.classList.add('fade');
+            item.node.classList.add('fade');
           }
         });
       }

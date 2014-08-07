@@ -174,7 +174,7 @@
   };
 
   LibraryItem.prototype.canAcceptLink = function (source) {
-    return (this.type.nin === -1 && !new Set(this.in.keys()).has(source)) || (this.type.nin === 1 && this.in.size < 1);
+    return (this.type.nin === -1 && !new Set(this.in.keys()).has(source)) || (this.type.nin === 1 && !this.in.size);
   };
 
   LibraryItem.prototype.link = function (target) {
