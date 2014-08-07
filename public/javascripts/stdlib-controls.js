@@ -69,12 +69,6 @@
 
         updater = this['update' + name.capitalize()];
 
-        function onChange() {
-          self.process[name] = this.value;
-          self.process.save();
-          self.process.dispatchEvent(name + ':changed', self.process);
-        }
-
         if (type === 'text') {
           this.dataNode.grab(
             new Element('p').adopt(
@@ -82,7 +76,11 @@
               new Element('input', {
                 class: 'process-conf-' + name,
                 type: 'text',
-                events: { input: onChange }
+                events: { input: function onChange() {
+                  self.process[name] = this.value;
+                  self.process.save();
+                  self.process.dispatchEvent(name + ':changed', self.process);
+                } }
               })
             )
           );
@@ -93,7 +91,11 @@
               new Element('input', {
                 class: 'process-conf-' + name,
                 type: 'checkbox',
-                events: { click: onChange }
+                events: { click: function onChange() {
+                  self.process[name] = this.checked;
+                  self.process.save();
+                  self.process.dispatchEvent(name + ':changed', self.process);
+                } }
               })
             )
           );
