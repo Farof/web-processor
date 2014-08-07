@@ -8,7 +8,7 @@
     this.in = new Map();
     this.out = new Map();
     this.value = value || this.type.defaultValue;
-    this.params = new Map(params || this.type.params.map(param => [param.name, param.defaultValue]));
+    this.params = new Map(params || this.type.params.map(param => [param.name || this.type.value || 'value', param.defaultValue]));
     this.initialized = false;
 
     if (this.type.constructor) this.type.constructor.call(this);
@@ -133,7 +133,7 @@
       this.type.params.forEach(param => {
         var builder = LibraryItem.param.get(param.type);
         if (builder) {
-          builder.call(this, param);
+          this.dataNode.grab(builder.call(this, param));
         }
       });
     }
@@ -215,7 +215,7 @@
       if (this.process.autoexec || manual) {
         if (this.validate()) {
           if (this.in.size === 0) {
-            this.execute(this.value).then(resolve, reject);
+            this.execute(this.params.get(this.type.value || 'value')).then(resolve, reject);
           } else {
             Promise.all(this.getAllUpdates(this.in.keys(), manual)).then(values => {
               this.execute(values).then(resolve, reject);
@@ -243,7 +243,7 @@
   LibraryItem.prototype.execute = function (values) {
     return (values !== undefined) ? new Promise((resolve, reject) => {
       if (this.type.execute) this.type.execute.call(this, values).then(resolve, reject);
-      else resolve(this.value);
+      else resolve(values);
     }) : Promise.reject('value was undefined');
   };
 
@@ -263,6 +263,23 @@
   };
 
   LibraryItem.param = new Map();
+
+  LibraryItem.param.set('text', function (param) {
+    var self = this, name = param.name || this.type.value || 'value';
+
+    if (this.params.get(name) === undefined) {
+      this.params.set(name, param.defaultValue || '');
+    }
+
+    var node = new Element('input', {
+      name: name,
+      type: 'text',
+      value: this.params.get(name),
+      events: { input: function () { self.setParam(this.name, this.value); } }
+    });
+
+    return node;
+  });
 
   LibraryItem.param.set('select', function (param) {
     function sourceAdd(source) {
@@ -301,8 +318,9 @@
       }
     }
 
-    var self = this, node = new Element('select', {
-      name: param.name,
+    var self = this, name = param.name || this.type.value || 'value',
+    node = new Element('select', {
+      name: name,
       events: { change: function () { self.setParam(this.name, this.value); } }
     });
 
@@ -312,7 +330,7 @@
           value: opt.value,
           text: opt.label,
           // == operator because value is auto-casted into string when saving
-          selected: opt.value == this.params.get(param.name)
+          selected: opt.value == this.params.get(name)
         })
       }));
     }
@@ -335,14 +353,14 @@
       });
     }
 
-    this.dataNode.grab(node);
+    return node;
   });
 
   Evented(LibraryItem);
 
   // library item type
   var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout, nosave,
-    builder, constructor, initialize, destroyer, execute, validator, defaultValue, params }) {
+    builder, constructor, initialize, destroyer, execute, validator, defaultValue, value, params }) {
     this.name = name;
     this.displayName = displayName;
     this.nin = typeof nin === 'number' ? nin : -1;
@@ -355,6 +373,7 @@
     this.execute = execute;
     this.validator = validator;
     this.defaultValue = defaultValue;
+    this.value = value;
     this.params = params || [];
 
     listNode.grab(

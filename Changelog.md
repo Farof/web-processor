@@ -1,5 +1,9 @@
 # Changelog
 
+## 2014-08-07
+
+- text param, default name to value
+
 ## 2014-08-06
 
 - button to cleanup localStorage invalid entries

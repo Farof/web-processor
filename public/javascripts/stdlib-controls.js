@@ -7,6 +7,19 @@
   }).grab(new Element('h3', { text: 'Controls' }));
   $('#library').grab(node);
 
+  wp.LibraryType.TestControl2 = new wp.LibraryType({
+    listNode: node,
+    name: 'TestControl2',
+    displayName: 'Test 2',
+    nin: 0,
+    nout: -1,
+    nosave: true,
+
+    params: [{
+      type: 'text'
+    }]
+  });
+
   wp.LibraryType.TestControl = new wp.LibraryType({
     listNode: node,
     name: 'TestControl',

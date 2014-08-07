@@ -12,20 +12,7 @@
     name: 'TextInput',
     displayName: 'Text',
     nin: 0,
-    defaultValue: '',
-
-    builder: function () {
-      var self = this;
-      return new Element('input', {
-        type: 'text',
-        value: this.value,
-        events: {
-          input: function () {
-            self.setValue(this.value);
-          }
-        }
-      })
-    }
+    params: [{ type: 'text' }]
   });
 
   wp.LibraryType.ListInput = new wp.LibraryType({
