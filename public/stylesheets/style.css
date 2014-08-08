@@ -206,7 +206,7 @@ a {
   border-bottom: 1px solid var(--main-border-color);
   cursor: pointer;
   margin: 3px 0 0;
-  padding: 0 3px 3px;
+  padding: 0 25px 3px;
   position: relative;
   text-align: center;
 }
