@@ -56,6 +56,18 @@
       }
     },
 
+    filter: {
+      value: function (obj, func) {
+        var key, map = {};
+
+        for (key in obj) {
+          if (func(obj[key], key, obj)) map[key] = obj[key];
+        }
+
+        return map;
+      }
+    },
+
     some: {
       value: function (obj, func) {
         var key, some = true;
@@ -352,15 +364,15 @@
   Object.defineProperties(HTMLDocument.prototype, {
     $: {
       enumerable: true,
-      value: function (...args) {
-        return this.querySelector.apply(this, args);
+      value: function (selector) {
+        return this.querySelector(selector);
       }
     },
 
     $$: {
       enumerable: true,
-      value: function (...args) {
-        return this.querySelectorAll.apply(this, args);
+      value: function (selector) {
+        return this.querySelectorAll(selector);
       }
     }
   });

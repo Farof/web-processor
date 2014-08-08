@@ -17,6 +17,10 @@ a {
   color: #00B7FF;
 }
 
+.highlight {
+  box-shadow: 0px 0px 3px 3px lightblue !important;
+}
+
 #debug {
   width: 100%;
   border-bottom: 1px dotted var(--main-border-color);
@@ -70,7 +74,7 @@ a {
 }
 
 .collection-item {
-  
+
 }
 
 .item-name-line {
@@ -144,7 +148,7 @@ a {
 }
 
 .view-content {
-  
+
 }
 
 .content-wrapper {
@@ -207,15 +211,18 @@ a {
   text-align: center;
 }
 
-.content-item:not(.success) > h4 {
-    padding-left: 21px;
+.item-options {
+  cursor: pointer;
+  left: 3px;
+  margin: 0 7px 0 3px;
+  position: absolute;
 }
 
 .item-info {
   cursor: pointer;
-  float: right;
-/*  font-weight: normal;*/
   margin: 0 3px 0 7px;
+  position: absolute;
+  right: 3px;
 }
 
 .content-item.success .item-info {
@@ -253,7 +260,15 @@ a {
 }
 
 .link-info {
-  background: white;
+
+}
+
+.item-options {
+
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--main-border-color);
   display: flex;
   flex-flow: column;
@@ -261,12 +276,19 @@ a {
   position: absolute;
 }
 
-.link-title {
+.panel-title {
+  background: white;
   border-bottom: 1px solid var(--main-border-color);
   margin: 3px 0;
   padding: 1px 3px;
 }
 
-.link-actions {
+.panel-actions {
+  display: flex;
+  flex-flow: column;
   padding: 5px;
+}
+
+.panel-actions p {
+  margin: 5px 3px;
 }

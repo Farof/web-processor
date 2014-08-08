@@ -28,6 +28,7 @@
       name: 'multiplicator',
       type: 'select',
       defaultValue: 2,
+      bindable: true,
       values: [
         { value: 2, label: 'x2' },
         { value: 4, label: 'x4' },

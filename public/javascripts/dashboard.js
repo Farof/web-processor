@@ -9,6 +9,12 @@
     initialized: false,
     proxyURL: '/proxy?url=',
 
+    uuid: function () {
+      var id;
+      do { id = uuid(); } while (!isNaN(parseInt(id, 10)));
+      return id;
+    },
+
     cleanStorage: function () {
       var objects = [], exists = [];
 

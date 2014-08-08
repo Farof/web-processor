@@ -36,17 +36,22 @@
       };
 
       this.loadItems = function Process_loadItems(items) {
-        var co = {};
+        var links = {}, bindings = {}, item, uuid, out, couple;
 
-        for (var item of items) {
-          co[item.uuid] = item.out;
+
+        for (item of items) {
+          links[item.uuid] = item.out;
+          bindings[item.uuid] = item.bindings;
           this.addItem(new wp.LibraryItem({ _uuid: item.uuid, type: wp.LibraryType[item.type], params: item.params }))
               .node.setLeft(item.left).setTop(item.top);
         }
 
-        for (var [uuid, item] of this.items) {
-          for (var out of (co[uuid] || [])) {
-            item.link(this.items.get(out));
+
+
+        for ([uuid, item] of this.items) {
+          for (out of links[uuid]) {
+            couple = bindings[out].find(couple => couple[0] === uuid);
+            item.link(this.items.get(out), couple ? couple[1] : couple);
           }
         }
       };
@@ -196,7 +201,7 @@
       function linkingOn() {
         self.items.forEach(item => {
           if (item === c_conf.linkFrom) {}
-          else if (item.canAcceptLink(c_conf.linkFrom)) {
+          else if (item.canAcceptLink(c_conf.linkFrom) || item.canAcceptBinding(c_conf.linkFrom)) {
             item.node.classList.remove('fade');
           } else {
             item.node.classList.add('fade');
@@ -218,7 +223,7 @@
       function c_update(ev) {
         c_clear();
         if (c_conf.cursor.in && c_conf.linkFrom) c_drawNewLink(ev);
-        c_drawLinks(ev);
+        self.items.forEach(item => item.out.forEach(link => link.draw(ctx, c_conf)));
       }
 
       function c_clear() {
@@ -236,7 +241,7 @@
         document.removeEventListener('mouseup', c_stopLink);
 
         var start = c_conf.linkFrom, target = c_conf.hover;
-        if (target && target !== start && target.canAcceptLink(start)) {
+        if (target && target !== start && (target.canAcceptLink(start) || target.canAcceptBinding(start))) {
           start.link(target);
         }
 
@@ -245,67 +250,11 @@
         c_update();
       }
 
-      function c_getLinkInfo(at, ar, ab, al, bt, br, bb, bl) {
-        var qp = Math.PI / 4,
-        acx = (al + ar) / 2, acy = (at + ab) / 2,
-        bcx = (bl + br) / 2, bcy = (bt + bb) / 2,
-        a = Math.atan2(acy - bcy, bcx - acx);
-
-        if (a < qp * 3 && a >= qp) {
-          return { a: a, dir: 'up', x: acx, y: at, xx: bcx, yy: bb };
-        } else if (a < qp && a >= -qp) {
-          return { a: a, dir: 'right', x: ar, y: acy, xx: bl, yy: bcy };
-        } else if (a < -qp && a >= -qp * 3) {
-          return { a: a, dir: 'down', x: acx, y: ab, xx: bcx, yy: bt };
-        } else {
-          return { a: a, dir: 'left', x: al, y: acy, xx: br, yy: bcy };
-        }
-      }
-
-      function c_link(x, y, xx, yy, a, dir) {
-        var hover;
-
-        hover = wp.draw.circle(ctx, c_conf, x, y, 3, {
-          strokeStyle: 'black',
-          fillStyle: 'black'
-        }, true, true) || hover;
-
-        hover = wp.draw.line(ctx, c_conf, x, y, xx, yy, {
-          lineWidth: 3
-        }, true, true) || hover;
-
-        return hover;
-      }
-
-      function c_drawLink(link, ev) {
-        var source = link.source.node, target = link.target.node;
-        var { a, dir, x, y, xx, yy } = c_getLinkInfo(
-          source.offsetTop, source.offsetLeft + source.offsetWidth,
-          source.offsetTop + source.offsetHeight, source.offsetLeft,
-          target.offsetTop, target.offsetLeft + target.offsetWidth,
-          target.offsetTop + target.offsetHeight, target.offsetLeft
-        );
-
-        // if hover link, set variables and redraw with blur
-        if (c_link(x, y, xx, yy, a, dir) && !c_conf.linkFrom) {
-          var { shadowBlur, shadowColor } = ctx;
-          c_conf.hoverLink = link;
-
-          wp.draw._conf(ctx, { shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
-          c_link(x, y, xx, yy, a, dir);
-          wp.draw._conf(ctx, { shadowBlur: shadowBlur, shadowColor: shadowColor });
-          self.workspace.classList.add('clickable');
-        } else if (c_conf.hoverLink === link) {
-          self.workspace.classList.remove('clickable');
-          delete c_conf.hoverLink;
-        }
-      }
-
       function c_drawNewLink(ev) {
         var target = c_conf.hover;
 
         // sometimes a bug where target.wpobj is not defined ?
-        if (!target || target === c_conf.linkFrom || !target.canAcceptLink(c_conf.linkFrom)) {
+        if (!target || target === c_conf.linkFrom || !(target.canAcceptLink(c_conf.linkFrom) || target.canAcceptBinding(c_conf.linkFrom))) {
           var pos = canvas.getBoundingClientRect();
           target = {
             node: {
@@ -317,11 +266,7 @@
           };
         }
 
-        c_drawLink({ source: c_conf.linkFrom, target: target }, ev);
-      }
-
-      function c_drawLinks(ev) {
-        self.items.forEach(item => item.out.forEach(c_drawLink));
+        wp.Link.draw.call({ source: c_conf.linkFrom, target: target }, ctx, c_conf);
       }
 
       this.workspace.addEvents({

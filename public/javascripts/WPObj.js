@@ -68,7 +68,7 @@
   };
 
   var WPObj = wp.WPObj = function ({ _uuid, type, name }) {
-    this.uuid = _uuid || uuid();
+    this.uuid = _uuid || wp.uuid();
     this.type = type;
     this.name = name;
     this.initialized = false;

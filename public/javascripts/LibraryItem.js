@@ -3,14 +3,16 @@
 
   // library items
   var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value, params }) {
-    this.uuid = _uuid || uuid();
+    this.uuid = _uuid || wp.uuid();
+    if (!isNaN(parseInt(this.uuid, 10))) console.log('invalid uuid', this);
     this.type = type;
     this.in = new Map();
     this.out = new Map();
-    this.params = new Map(params || this.type.params.map(param => [param.name || this.type.value || 'value', param.defaultValue]));
+    this.params = new Map(params || this.type.params.map(param => [param.name || this.type.value, param.defaultValue]));
     this.initialized = false;
 
     if (this.type.constructor) this.type.constructor.call(this);
+    this.hideInfoPanel = this.hideInfoPanel.bind(this);
 
     wp.dispatchEvent('process-item:new', this);
   };
@@ -38,7 +40,8 @@
       out: Array.from(this.out.keys()).map(target => target.uuid),
       left: parseInt(this.node.style.left, 10),
       top: parseInt(this.node.style.top, 10),
-      params: Array.from(this.params)
+      params: Array.from(this.params),
+      bindings: Array.from(this.in.values()).filter(link => link.bound).map(link => [link.source.uuid, link.bound])
     };
   };
 
@@ -64,6 +67,7 @@
 
     var node = this.node = new Element('div', {
       class: 'content-item',
+      uuid: this.uuid,
       properties: { wpobj: this },
       style: {
         left: left + 'px',
@@ -100,7 +104,15 @@
             document.addEventListener('mouseup', dragstop);
           }
         }
-      }).grab(
+      }).adopt(
+        new Element('span', {
+          class: 'item-options',
+          text: '\u2699',
+          title: 'options',
+          events: {
+            click: function () { self.showInfoPanel(); }
+          }
+        }),
         new Element('span', {
           class: 'item-info',
           text: '\uFE0F\u26A0',
@@ -143,6 +155,7 @@
     this.destroying = true;
     this.dispatchEvent('destroy', this);
 
+    this.hideInfoPanel();
     this.out.forEach(link => link.destroy());
     this.in.forEach(link => link.destroy());
 
@@ -166,11 +179,29 @@
   };
 
   LibraryItem.prototype.canAcceptLink = function (source) {
-    return (this.type.nin === -1 && !new Set(this.in.keys()).has(source)) || (this.type.nin === 1 && !this.in.size);
+    return !new Set(this.in.keys()).has(source) && (this.type.nin === -1 ||
+    (this.type.nin === 1 && (!this.in.size || Array.from(this.in.values()).every(link => link.bound))));
   };
 
-  LibraryItem.prototype.link = function (target) {
-    return new wp.Link(this, target);
+  LibraryItem.prototype.canAcceptBinding = function (source) {
+    return !new Set(this.in.keys()).has(source) && !!this.getNextBindableParam();
+  };
+
+  LibraryItem.prototype.getNextBindableParam = function () {
+    return this.type.params.find(param => param.bindable && !Array.from(this.in.values).some(link => {
+      return link.bound && link.bound === (param.name || type.type.value);
+    }));
+  };
+
+  LibraryItem.prototype.link = function (target, param) {
+    if (!param && target.canAcceptLink(this)) {
+      return new wp.Link(this, target);
+    }
+
+    param = param || target.getNextBindableParam();
+    var link = new wp.Link(this, target);
+    link.target.bindParam(typeof param === 'object' ? (param.name || target.type.value) : param, link);
+    return link;
   };
 
   LibraryItem.prototype.getUniqueDownstreams = function () {
@@ -185,7 +216,7 @@
 
   LibraryItem.prototype.updateDownstreams = function () {
     if (this.out.size) {
-      return Promise.all(this.getAllUpdates(this.getUniqueDownstreams()));
+      return Promise.all(Array.from(this.getUniqueDownstreams()).map(item => item.update()))
     } else {
       return this.update();
     }
@@ -193,14 +224,51 @@
 
   LibraryItem.prototype.update = function (manual) {
     var p = this.updateInProgress || (this.updateInProgress = new Promise((resolve, reject) => {
-
       if (this.process.autoexec || manual) {
         if (this.validate()) {
           if (this.in.size === 0) {
-            this.execute(this.params.get(this.type.value || 'value')).then(resolve, reject);
+            this.execute(this.params.get(this.type.value)).then(resolve, reject);
           } else {
-            Promise.all(this.getAllUpdates(this.in.keys(), manual)).then(values => {
-              this.execute(values).then(resolve, reject);
+            var updates = new Map();
+            this.in.forEach(link => {
+              updates.set(link, link.source.update(manual));
+            });
+
+            Promise.all(Array.from(updates.values())).then(_values => {
+              var links = Array.from(updates.keys());
+              var bindings = {}, key, value, success = true;
+              var values = [];
+
+              // separate bound parameters from data values
+              _values.forEach((value, index) => {
+                var link = links[index];
+                if (link.bound) {
+                  bindings[link.bound] = value;
+                } else {
+                  values.push(value);
+                }
+              });
+
+              for (key in bindings) {
+                success = (bindings[key] = !!this.node.$('[name=' + key + ']').bindParam(bindings[key])) && success;
+                if (bindings[key]) {
+                  delete bindings[key];
+                } else {
+                  Array.from(this.in.values()).find(link => link.bound === key).source.validate(
+                    'Invalid value for parameter "' + key + '"'
+                  )
+                }
+              }
+
+              if (success) {
+                this.execute(values).then(resolve, reject);
+              } else {
+                this.validate(
+                  'Invalid bound parameters: ' + Object.keys(bindings).join(', ')
+                );
+                this.dispatchEvent('upstream:error');
+                reject('invalid bound parameter');
+              }
             }, err => {
               this.validate('upstream error: ' + err);
               this.dispatchEvent('upstream:error');
@@ -234,8 +302,10 @@
     else if (this.type.nin !== 0 && !this.in.size) err = 'input needed';
     else if (this.type.nout !== 0 && !this.out.size) err = 'output needed';
 
-    if (!err) this.node.classList.add('success');
-    else {
+    if (!err) {
+      this.node.classList.add('success');
+      this.errorMessage = '';
+    } else {
       this.node.classList.remove('success');
       this.node.$('.item-info').title = err;
       this.errorMessage = err;
@@ -244,12 +314,146 @@
     return !err;
   };
 
+  LibraryItem.prototype.showInfoPanel = function () {
+    var
+    self = this,
+    overlay = this.process.overlay,
+    panel = this.buildInfoPanel(),
+    previous = overlay.$('.panel');
+
+    if (previous) previous.wpobj.hideInfoPanel();
+
+    overlay.grab(panel);
+    panel.style.left = Math.trunc(this.process.c_conf.cursor.x - panel.offsetWidth / 2) + 'px';
+    panel.style.top = Math.trunc(this.process.c_conf.cursor.y - 15) + 'px';
+
+    panel.addEventListener('mousemove', function onmove() {
+      document.addEventListener('click', self.hideInfoPanel);
+      panel.removeEventListener('mousemove', onmove);
+    });
+  };
+
+  LibraryItem.prototype.hideInfoPanel = function (ev) {
+    if (ev && ev.target.getParent('.panel', true)) return;
+    if (this.panel) this.panel.unload();
+    document.removeEventListener('click', this.hideInfoPanel);
+  };
+
+  LibraryItem.prototype.buildInfoPanel = function () {
+    if (this.panel) return this.panel;
+    var self = this;
+
+    return (this.panel = new Element('div', {
+      class: 'item-options panel',
+      properties: { wpobj: this }
+    }).adopt(
+      new Element('div', {
+        class: 'panel-actions'
+      }).grab(
+        new Element('button', {
+          class: 'action-delete',
+          text: 'delete',
+          events: { click: function () { self.process.removeItem(self); } }
+        })
+      ).adopt(this.type.params.filter(param => param.bindable).map(param => {
+        var name = param.name || self.type.value;
+        return new Element('p', {
+          events: {
+            mouseenter: function () {
+              var node = self.dataNode.$('[name=' + name + ']');
+              if (node) node.classList.add('highlight');
+            },
+            mouseleave: function () {
+              var node = self.dataNode.$('[name=' + name + ']');
+              if (node) node.classList.remove('highlight');
+            }
+          }
+        }).adopt(
+          new Element('span', { text: param.name.capitalize() + ': ' }),
+          (() => {
+            function addLink(link) {
+              var opt = new Element('option', {
+                text: link.source.type.displayName,
+                value: link.source.uuid,
+                name: link.uuid,
+                properties: { wpobj: link },
+                selected: link.bound === name,
+                events: {
+                  mouseenter: function () {
+                    self.process.workspace.$('[uuid=' + link.source.uuid + ']').classList.add('highlight');
+                  },
+                  mouseleave: function () {
+                    self.process.workspace.$('[uuid=' + link.source.uuid + ']').classList.remove('highlight');
+                  },
+                  click: function () {
+                    self.bindParam(name, link);
+                  }
+                }
+              });
+
+              map.set(link.source, opt);
+              // linkMap.set(link.source.uuid, link);
+              select.grab(opt);
+            }
+
+            function removeLink(source) {
+              map.get(source).unload();
+            }
+
+            var map = new WeakMap();
+            // var linkMap = new WeakMap();
+
+            var select = new Element('select').grab(
+              new Element('option', {
+                text: '<none>',
+                value: '<none>',
+                events: { click: function () {
+                  self.bindParam('<none>', Array.from(self.in.values()).find(link => link.bound === name));
+                } }
+              })
+            );
+
+            this.in.forEach(addLink);
+            this.addEventListener('linked', addLink);
+            this.addEventListener('unlinked', removeLink);
+
+            return select;
+          })()
+        );
+      }))
+    ));
+  };
+
+  LibraryItem.prototype.bindParam = function (name, link) {
+    if (name !== '<none>') {
+      // unbind previous binding
+      this.in.forEach(link => {
+        if (link.bound === name) {
+          delete link.bound;
+        }
+      })
+      link.bound = name;
+      this.dataNode.$('.param[name=' + name + ']').setAttribute('disabled', true);
+    } else {
+      // if the binding link can't stay as a value link, destroy it
+      this.dataNode.$('.param[name=' + link.bound + ']').removeAttribute('disabled');
+      if (link.target.type.nin !== -1 && link.target.in.size > 1) {
+        link.destroy();
+      } else {
+        delete link.bound;
+      }
+    }
+    this.process.save();
+    if (wp.initialized) this.updateDownstreams();
+    this.process.canvas.update();
+  };
+
   LibraryItem.param = new Map();
 
   LibraryItem.param.set('text', function (param) {
     var
     self = this,
-    name = param.name || this.type.value || 'value',
+    name = param.name || this.type.value,
     value = this.params.get(name);
 
     if (value === undefined) {
@@ -258,6 +462,7 @@
     }
 
     return new Element('input', {
+      class: 'param',
       name: name,
       type: 'text',
       value: value,
@@ -295,7 +500,7 @@
 
     var
     self = this,
-    name = param.name || this.type.value || 'value',
+    name = param.name || this.type.value,
     value = this.params.get(name);
 
     if (!value) {
@@ -353,8 +558,9 @@
       }
     }
 
-    var self = this, name = param.name || this.type.value || 'value',
+    var self = this, name = param.name || this.type.value,
     node = new Element('select', {
+      class: 'param',
       name: name,
       events: { change: function () { self.setParam(this.name, this.value); } }
     });
@@ -388,6 +594,18 @@
       });
     }
 
+    if (param.bindable) {
+      node.bindParam = function (value) {
+        var opt = Array.from(node.options).find(n => n.value == value);
+        if (opt) {
+          node.value = value;
+          self.setParam(name, value);
+          return true;
+        }
+        return false;
+      };
+    }
+
     return node;
   });
 
@@ -406,7 +624,7 @@
     this.destroyer = destroyer;
     this.execute = execute;
     this.validator = validator;
-    this.value = value;
+    this.value = value || 'value';
     this.params = params || [];
 
     listNode.grab(

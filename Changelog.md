@@ -1,9 +1,15 @@
 # Changelog
 
+## 2014-08-08
+
+- dashed binding links
+- bindable select param
+
 ## 2014-08-07
 
 - text param, list param, default name to value, removed libraryItem.value & nosave
-- basic link panel
+- link panel with bindable param choice
+- item panel with link choice for bindable params
 
 ## 2014-08-06
 

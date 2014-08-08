@@ -1,26 +1,20 @@
 # TODO
 
 - correct repositionning of elements in workspace when resizing
-- better contextual cursor in workspace
 - arrow at end of link
 - server-side save
 - order input
 - item alignement help
 - make the app headless, able to operate without ui, in browser or node
   - the core app is headless and the ui is a process
-- named input / output
-- optional input
 - position collapse if reload when process is closed
 - export / import process
 - identify library item type by uuid to ensure process integrity if an item is renamed
 - don't redraw canvas on every mousemove: is it possible without breaking link hover detection ?
 - handle request redirect
-- move canvas related stuff in Process.js its own file
-- make items event emiters, don't use global hub
 - handle bad data persisted: junk data, behavior that shouldn't work
 - clone process to save for debug later
 - bootstrap rss & other complex process
-- passive value transfer option
 - library item creation documentation
 - core code contribution documentation
 - prevent path loop
