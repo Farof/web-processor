@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var node = new Element('div', {
+  const node = new Element('div', {
     id: 'library-operators',
     class: 'collection-category'
   }).grab(new Element('h3', { text: 'Operators' }));
@@ -52,7 +52,7 @@
     execute: function (values) {
       return Promise.all(Array.from(values).flatten().map(url => {
         return new Promise((resolve, reject) => {
-          var previous = this.requests.get(url);
+          const previous = this.requests.get(url);
           // handle redirect
           console.log('request: ', url);
 
@@ -60,11 +60,11 @@
             previous.abort();
           }
 
-          var { xhr, promise } = XHR.getXML(wp.proxyURL + url);
+          const { xhr, promise } = XHR.getXML(wp.proxyURL + url);
           this.requests.set(url, xhr);
 
           promise.then(xml => {
-            var err;
+            let err;
             this.requests.delete(url);
 
             if (xhr.status < 200 || xhr.status >= 300) err = xhr.status + ' ' + xhr.statusText;
@@ -127,11 +127,11 @@
     execute: function (values) {
       return new Promise((resolve, reject) => {
         resolve(Array.from(values).flatten().map(feed => {
-          var str = '';
+          let str = '';
           if (feed.title) {
             str += '<h3>' + feed.title + '<h4>';
             str += '<div>';
-            for (var item of feed.items) {
+            for (let item of feed.items) {
               str += '<div>';
               str += '<h4><a href="' + item.link + '">' + item.title + '</a></h4>';
               str += item.pubDate.toString().small();

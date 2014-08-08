@@ -1,10 +1,10 @@
 (exports => {
   "use strict";
 
-  var XHR = exports.XHR = {
+  const XHR = {
     init: function (url, options = {}) {
-      var xhr = new XMLHttpRequest();
-      var promise = new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const promise = new Promise((resolve, reject) => {
         xhr.onload = ev => resolve(xhr, ev);
         xhr.onerror = err => reject(err);
       });
@@ -17,7 +17,7 @@
     },
 
     request: function (url, options = {}) {
-      var { xhr, promise } = this.init(url, options);
+      const { xhr, promise } = this.init(url, options);
       xhr.send(options.data || null);
       return { xhr, promise };
     },
@@ -28,16 +28,18 @@
     },
 
     getXML: function (url) {
-      var { xhr, promise } = this.get(url);
+      let { xhr, promise } = this.get(url);
       promise = promise.then(req => req.responseXML);
       return { xhr, promise };
     },
 
     getJSON: function (url) {
-      var { xhr, promise } = this.get(url);
+      let { xhr, promise } = this.get(url);
       promise = promise.then(req => JSON.parse(req.responseText));
       return { xhr, promise };
     }
   };
+
+  exports.XHR = XHR;
 
 })(this);

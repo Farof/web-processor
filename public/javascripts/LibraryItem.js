@@ -2,7 +2,7 @@
   "use strict";
 
   // library items
-  var LibraryItem = wp.LibraryItem = function ({ _uuid, type, value, params }) {
+  wp.LibraryItem = function ({ _uuid, type, value, params }) {
     this.uuid = _uuid || wp.uuid();
     if (!isNaN(parseInt(this.uuid, 10))) console.log('invalid uuid', this);
     this.type = type;
@@ -16,6 +16,7 @@
 
     wp.dispatchEvent('process-item:new', this);
   };
+  const LibraryItem = wp.LibraryItem;
 
   LibraryItem.prototype.initialize = function () {
     if (!this.initialized) {
@@ -26,7 +27,7 @@
   };
 
   LibraryItem.prototype.setParam = function (name, value) {
-    var old = this.params.get(name);
+    const old = this.params.get(name);
     this.params.set(name, value);
     this.process.save();
     this.dispatchEvent('param:changed', name, value, old);
@@ -46,7 +47,8 @@
   };
 
   LibraryItem.prototype.buildNode = function () {
-    var startX, startY, left, top, self = this;
+    const self = this;
+    let startX, startY, left, top;
 
     function drag(ev) {
       node.setLeft((left + ev.clientX - startX) / node.parentNode.clientWidth * 100);
@@ -65,7 +67,7 @@
       self.process.canvas.update();
     }
 
-    var node = this.node = new Element('div', {
+    this.node = new Element('div', {
       class: 'content-item',
       uuid: this.uuid,
       properties: { wpobj: this },
@@ -124,10 +126,11 @@
         class: 'content-item-data'
       }))
     );
+    const node = this.node;
 
     if (this.type.params) {
       this.type.params.forEach(param => {
-        var builder = LibraryItem.param.get(param.type);
+        const builder = LibraryItem.param.get(param.type);
         if (builder) {
           this.dataNode.adopt(builder.call(this, param));
         }
@@ -135,13 +138,13 @@
     }
 
     node.setLeft = function (left) {
-      var w = node.parentNode.clientWidth;
+      const w = node.parentNode.clientWidth;
       this.style.left = Math.min(Math.max(left, 0), Math.trunc((w - node.clientWidth) / w * 100)) + '%';
       return this;
     };
 
     node.setTop = function (top) {
-      var h = node.parentNode.clientHeight;
+      const h = node.parentNode.clientHeight;
       this.style.top = Math.min(Math.max(top, 0), Math.trunc((h - node.offsetHeight) / h * 100)) + '%';
       return this;
     };
@@ -199,7 +202,7 @@
     }
 
     param = param || target.getNextBindableParam();
-    var link = new wp.Link(this, target);
+    const link = new wp.Link(this, target);
     link.target.bindParam(typeof param === 'object' ? (param.name || target.type.value) : param, link);
     return link;
   };
@@ -223,25 +226,27 @@
   };
 
   LibraryItem.prototype.update = function (manual) {
-    var p = this.updateInProgress || (this.updateInProgress = new Promise((resolve, reject) => {
+    const p = this.updateInProgress || (this.updateInProgress = new Promise((resolve, reject) => {
       if (this.process.autoexec || manual) {
         if (this.validate()) {
           if (this.in.size === 0) {
             this.execute(this.params.get(this.type.value)).then(resolve, reject);
           } else {
-            var updates = new Map();
+            const updates = new Map();
             this.in.forEach(link => {
               updates.set(link, link.source.update(manual));
             });
 
             Promise.all(Array.from(updates.values())).then(_values => {
-              var links = Array.from(updates.keys());
-              var bindings = {}, key, value, success = true;
-              var values = [];
+              const
+              links = Array.from(updates.keys()),
+              bindings = {},
+              values = [];
+              let success = true;
 
               // separate bound parameters from data values
               _values.forEach((value, index) => {
-                var link = links[index];
+                const link = links[index];
                 if (link.bound) {
                   bindings[link.bound] = value;
                 } else {
@@ -249,7 +254,7 @@
                 }
               });
 
-              for (key in bindings) {
+              for (let key in bindings) {
                 success = (bindings[key] = !!this.node.$('[name=' + key + ']').bindParam(bindings[key])) && success;
                 if (bindings[key]) {
                   delete bindings[key];
@@ -315,7 +320,7 @@
   };
 
   LibraryItem.prototype.showInfoPanel = function () {
-    var
+    const
     self = this,
     overlay = this.process.overlay,
     panel = this.buildInfoPanel(),
@@ -341,7 +346,7 @@
 
   LibraryItem.prototype.buildInfoPanel = function () {
     if (this.panel) return this.panel;
-    var self = this;
+    const self = this;
 
     return (this.panel = new Element('div', {
       class: 'item-options panel',
@@ -356,23 +361,21 @@
           events: { click: function () { self.process.removeItem(self); } }
         })
       ).adopt(this.type.params.filter(param => param.bindable).map(param => {
-        var name = param.name || self.type.value;
+        const name = param.name || self.type.value;
         return new Element('p', {
           events: {
             mouseenter: function () {
-              var node = self.dataNode.$('[name=' + name + ']');
-              if (node) node.classList.add('highlight');
+              self.dataNode.$('[name=' + name + ']').classList.add('highlight');
             },
             mouseleave: function () {
-              var node = self.dataNode.$('[name=' + name + ']');
-              if (node) node.classList.remove('highlight');
+              self.dataNode.$('[name=' + name + ']').classList.remove('highlight');
             }
           }
         }).adopt(
           new Element('span', { text: param.name.capitalize() + ': ' }),
           (() => {
             function addLink(link) {
-              var opt = new Element('option', {
+              const opt = new Element('option', {
                 text: link.source.type.displayName,
                 value: link.source.uuid,
                 name: link.uuid,
@@ -400,10 +403,9 @@
               map.get(source).unload();
             }
 
-            var map = new WeakMap();
-            // var linkMap = new WeakMap();
+            const map = new WeakMap();
 
-            var select = new Element('select').grab(
+            const select = new Element('select').grab(
               new Element('option', {
                 text: '<none>',
                 value: '<none>',
@@ -451,10 +453,8 @@
   LibraryItem.param = new Map();
 
   LibraryItem.param.set('text', function (param) {
-    var
-    self = this,
-    name = param.name || this.type.value,
-    value = this.params.get(name);
+    const self = this, name = param.name || this.type.value;
+    let value = this.params.get(name);
 
     if (value === undefined) {
       value = param.defaultValue || '';
@@ -498,10 +498,8 @@
       );
     }
 
-    var
-    self = this,
-    name = param.name || this.type.value,
-    value = this.params.get(name);
+    const self = this, name = param.name || this.type.value;
+    let value = this.params.get(name);
 
     if (!value) {
       value = param.defaultValue || [];
@@ -512,7 +510,7 @@
       text: param.addLabel || 'add',
       events: {
         click: function () {
-          var line = buildInput();
+          const line = buildInput();
           this.parentNode.grab(line);
           line.$('input').focus();
           self.process.canvas.update();
@@ -522,43 +520,7 @@
   });
 
   LibraryItem.param.set('select', function (param) {
-    function sourceAdd(source) {
-      function labelChanged(source) {
-        opt.textContent = source[label];
-      }
-
-      var opt = new Element('option', {
-        value: source[value],
-        text: source[label]
-      });
-
-      source.addEventListener(label + ':changed', labelChanged);
-
-      self.addEventListener('destroy', item => {
-        source.removeEventListener(label + ':changed', labelChanged);
-      });
-
-      if (source[value] === self.params.get(param.name)) {
-        opt.setAttribute('selected', true);
-      }
-
-      node.grab(opt);
-    }
-
-    function sourceDel(source) {
-      var oldValue = node.value;
-      for (var opt of node.children) {
-        if (opt.value === source[value]) {
-          opt.unload();
-          if (node.value !== oldValue) {
-            self.setParam(param.name, node.value);
-          }
-          break;
-        }
-      }
-    }
-
-    var self = this, name = param.name || this.type.value,
+    const self = this, name = param.name || this.type.value,
     node = new Element('select', {
       class: 'param',
       name: name,
@@ -577,26 +539,65 @@
     }
 
     if (param.datasource) {
-      var
-      emitter = param.datasource.emitter || wp,
-      collection = param.datasource.collection || wp[param.datasource.name].items,
-      label = param.datasource.label || 'name',
-      value = param.datasource.value || 'uuid';
+      let (
+        sourceAdd = function sourceAdd(source) {
+          function labelChanged(source) {
+            opt.textContent = source[label];
+          }
 
-      emitter.addEventListener(param.datasource.name + ':new', sourceAdd);
-      emitter.addEventListener(param.datasource.name + ':destroy', sourceDel);
+          const opt = new Element('option', {
+            value: source[value],
+            text: source[label]
+          });
 
-      collection.forEach(sourceAdd);
+          source.addEventListener(label + ':changed', labelChanged);
 
-      this.addEventListener('destroy', item => {
-        emitter.removeEventListener(param.datasource.name + ':new', sourceAdd);
-        emitter.removeEventListener(param.datasource.name + ':destroy', sourceDel);
-      });
+          self.addEventListener('destroy', item => {
+            source.removeEventListener(label + ':changed', labelChanged);
+          });
+
+          if (source[value] === self.params.get(param.name)) {
+            opt.setAttribute('selected', true);
+          }
+
+          node.grab(opt);
+        },
+
+        sourceDel = function sourceDel(source) {
+          const oldValue = node.value;
+          for (let opt of node.children) {
+            if (opt.value === source[value]) {
+              opt.unload();
+              if (node.value !== oldValue) {
+                self.setParam(param.name, node.value);
+              }
+              break;
+            }
+          }
+        }
+      ) {
+
+        const
+        emitter = param.datasource.emitter || wp,
+        collection = param.datasource.collection || wp[param.datasource.name].items,
+        label = param.datasource.label || 'name',
+        value = param.datasource.value || 'uuid';
+
+        emitter.addEventListener(param.datasource.name + ':new', sourceAdd);
+        emitter.addEventListener(param.datasource.name + ':destroy', sourceDel);
+
+        collection.forEach(sourceAdd);
+
+        this.addEventListener('destroy', item => {
+          emitter.removeEventListener(param.datasource.name + ':new', sourceAdd);
+          emitter.removeEventListener(param.datasource.name + ':destroy', sourceDel);
+        });
+      }
     }
 
     if (param.bindable) {
       node.bindParam = function (value) {
-        var opt = Array.from(node.options).find(n => n.value == value);
+        const opt = Array.from(node.options).find(n => n.value == value);
         if (opt) {
           node.value = value;
           self.setParam(name, value);
@@ -612,7 +613,7 @@
   Evented(LibraryItem);
 
   // library item type
-  var LibraryType = wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
+  wp.LibraryType = function LibraryType({ listNode, name, displayName, nin, nout,
     builder, constructor, initialize, destroyer, execute, validator, value, params }) {
     this.name = name;
     this.displayName = displayName;
@@ -640,5 +641,6 @@
       })
     );
   };
+  const LibraryType = wp.LibraryType;
 
 })(this);

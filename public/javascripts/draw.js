@@ -2,7 +2,7 @@
   "use strict";
 
   function configure(ctx, conf) {
-    for (var key in conf) {
+    for (let key in conf) {
       ctx[key] = conf[key];
     }
   }
@@ -35,7 +35,7 @@
       return isPointInStroke(ctx, c_conf);
     }
   };
-  
+
   wp.draw._conf = configure;
 
 })(this);

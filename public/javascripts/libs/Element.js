@@ -2,10 +2,10 @@
   "use strict";
 
   exports.Element = function (tag, options) {
-    var element = document.createElement(tag), key;
+    const element = document.createElement(tag);
     options = options || {};
 
-    for (key in options) {
+    for (let key in options) {
       if (exports.Element.Mutators[key]) {
         exports.Element.Mutators[key].call(element, options[key]);
       } else if (['string', 'number'].contains(typeof options[key])) {
@@ -20,23 +20,17 @@
 
   exports.Element.Mutators = {
     events: function (events) {
-      var
-        event,
-        func = function (func) {
-          this.addEventListener(event, func, false);
-        }.bind(this);
-
-      for (event in events) {
-        (Array.isArray(events[event]) ? events[event] : [events[event]]).forEach(func);
+      for (let event in events) {
+        this.addEventListener(event, events[event]);
       }
     },
 
     style: function (styles) {
-      var style, str = '';
+      let str = '';
       if (typeof styles === 'string') {
         str = styles;
       } else {
-        for (style in styles) {
+        for (let style in styles) {
           str += style + ': ' + styles[style] + '; ';
         }
       }
@@ -44,18 +38,15 @@
     },
 
     text: function (text) {
-      var textNode = document.createTextNode(text);
-      this.appendChild(textNode);
+      this.appendChild(document.createTextNode(text));
     },
-    
+
     html: function (text) {
       this.innerHTML = text;
     },
 
     properties: function (properties) {
-      var key;
-
-      for (key in properties) {
+      for (let key in properties) {
         this[key] = properties[key];
       }
     }

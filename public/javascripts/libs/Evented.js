@@ -2,20 +2,20 @@
   "use strict";
 
   function addEventListener(ev, cb) {
-    var list = this.events.get(ev);
+    let list = this.events.get(ev);
     if (!list) this.events.set(ev, list = new Set());
     list.add(cb);
   }
 
   function dispatchEvent(ev, ...args) {
-    var list = this.events.get(ev);
+    const list = this.events.get(ev);
     if (list) {
-      for (var cb of list) cb.call(this, ...args);
+      for (let cb of list) cb.call(this, ...args);
     }
   }
 
   function removeEventListener(ev, cb) {
-    var list = this.events.get(ev);
+    const list = this.events.get(ev);
     if (list) {
       if (cb) list.delete(cb);
       else list.clear();

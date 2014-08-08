@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var node = new Element('div', {
+  const node = new Element('div', {
     id: 'library-controls',
     class: 'collection-category'
   }).grab(new Element('h3', { text: 'Controls' }));
@@ -49,18 +49,18 @@
     nout: 0,
 
     destroyer: function () {
-      for (var [name, type] of this.process.conf) {
+      for (let [name, type] of this.process.conf) {
         this.process.removeEventListener(name + ':changed', this['update' + name.capitalize()]);
       }
     },
 
     initialize: function () {
       // build things here because this.process is not yet set in constructor or builder
-      var updater, self = this;
+      const self = this;
 
       this.process.conf.forEach((type, name) => {
         this['update' + name.capitalize()] = process => {
-          var node = this.node.$('.process-conf-' + name);
+          const node = this.node.$('.process-conf-' + name);
           if (type === 'text') {
             node.value = process[name];
           } else if (type === 'bool') {
@@ -68,7 +68,7 @@
           }
         };
 
-        updater = this['update' + name.capitalize()];
+        const updater = this['update' + name.capitalize()];
 
         if (type === 'text') {
           this.dataNode.grab(
@@ -118,7 +118,7 @@
     nout: 0,
 
     builder: function () {
-      var self = this;
+      const self = this;
       return new Element('button', {
         text: 'Execute',
         events: {

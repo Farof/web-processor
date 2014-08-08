@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var node = new Element('div', {
+  const node = new Element('div', {
     id: 'library-outputs',
     class: 'collection-category'
   }).grab(new Element('h3', { text: 'Outputs' }));
@@ -39,19 +39,19 @@
 
     constructor: function () {
       this.addEventListener('upstream:error', () => {
-        var view = wp.View.items.get(this.params.get('view'));
+        const view = wp.View.items.get(this.params.get('view'));
         if (view) view.workspace.empty();
       });
 
       this.addEventListener('param:changed', (name, val, old) => {
-        var view;
+        let view;
         if (name === 'view' && (view = wp.View.items.get(old))) {
           view.workspace.empty();
         }
       });
 
       this.addEventListener('unlinked', () => {
-        var view;
+        let view;
         if (!this.in.size && (view = wp.View.items.get(this.params.get('view')))) {
           view.workspace.empty();
         }
@@ -72,7 +72,9 @@
           view.workspace.grab(new Element('p', { text: JSON.stringify(value) }));
         }
 
-        var view = wp.View.items.get(this.params.get('view')), mode = this.params.get('mode'), insert;
+        const view = wp.View.items.get(this.params.get('view')), mode = this.params.get('mode');
+        let insert;
+
         if (view) {
           view.workspace.empty();
 

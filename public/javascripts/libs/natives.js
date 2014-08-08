@@ -37,8 +37,7 @@
 
     forEach: {
       value: function (obj, func) {
-        var key;
-        for (key in obj) {
+        for (let key in obj) {
           func(obj[key], key, obj);
         }
       }
@@ -46,9 +45,9 @@
 
     map: {
       value: function (obj, func) {
-        var key, map = {};
+        const map = {};
 
-        for (key in obj) {
+        for (let key in obj) {
           map[key] = func(obj[key], key, obj);
         }
 
@@ -58,9 +57,9 @@
 
     filter: {
       value: function (obj, func) {
-        var key, map = {};
+        const map = {};
 
-        for (key in obj) {
+        for (let key in obj) {
           if (func(obj[key], key, obj)) map[key] = obj[key];
         }
 
@@ -70,9 +69,9 @@
 
     some: {
       value: function (obj, func) {
-        var key, some = true;
+        let some = true;
 
-        for (key in obj) {
+        for (let key in obj) {
           some = func(obj[key], key, obj);
 
           if (some) {
@@ -86,8 +85,7 @@
 
     every: {
       value: function (obj, func) {
-        var key;
-        for (key in obj) {
+        for (let key in obj) {
           if (!func(obj[key], key, obj)) {
             return false;
           }
@@ -99,8 +97,7 @@
 
     match: {
       value: function (obj, func) {
-        var key;
-        for (key in obj) {
+        for (let key in obj) {
           if (func(obj[key], key, obj)) {
             return key;
           }
@@ -111,8 +108,8 @@
 
     lastMatch: {
       value: function (obj, func) {
-        var key, ret = null;
-        for (key in obj) {
+        let ret = null;
+        for (let key in obj) {
           if (func(obj[key], key, obj)) {
             ret = key;
           }
@@ -139,13 +136,13 @@
 
     values: {
       value: function (obj) {
-        var values = [], key;
+        const values = [];
 
         if (typeof obj !== 'object' || Array.isArray(obj)) {
           return obj;
         }
 
-        for (key in obj) {
+        for (let key in obj) {
           values.push(obj[key]);
         }
 
@@ -155,8 +152,7 @@
 
     merge: {
       value: function (source, adds) {
-        var key;
-        for (key in adds) {
+        for (let key in adds) {
           source[key] = adds[key];
         }
         return source;
@@ -220,9 +216,9 @@
 
     properties: {
       value: function (obj) {
-        var copy = {}, key;
+        const copy = {};
 
-        for (key in obj) {
+        for (let key in obj) {
           if (typeof obj[key] !== 'function' && ((obj.constructor && obj.constructor !== Object) ? obj.constructor.prototype.propertyIsEnumerable(key) : true)) {
             copy[key] = obj[key];
           }
@@ -251,20 +247,11 @@
 
     delay: {
       value: function (delay, bind) {
-        var func = this;
+        const func = this;
         setTimeout(function () {
           func.call(bind);
         }, delay || 4);
         return this;
-      }
-    },
-
-    unshift: {
-      value: function (arg, bind) {
-        var func = this;
-        return function () {
-          return func.apply(bind || this, [arg].concat(Array.prototype.slice.call(arguments)));
-        }
       }
     }
   });
@@ -320,10 +307,9 @@
 
     merge: {
       value: function (items) {
-        var i, ln;
         items = Array.isArray(items) ? items : [];
 
-        for (i = 0, ln = items.length; i < ln; i += 1) {
+        for (let i = 0, ln = items.length; i < ln; i += 1) {
           this.include(items[i], true);
         }
 
@@ -333,7 +319,7 @@
 
     remove: {
       value: function (item) {
-        var i = this.indexOf(item);
+        const i = this.indexOf(item);
         if (i > -1) {
           this.splice(i, 1);
         }
@@ -463,7 +449,7 @@
     addEvents: {
       enumerable: true,
       value: function (events) {
-        for (var ev in events) {
+        for (let ev in events) {
           this.addEventListener(ev, events[ev]);
         }
       }

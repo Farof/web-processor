@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var WPObjType = wp.WPObjType = function ({ name, defaultItemName, listNode,
+  wp.WPObjType = function ({ name, defaultItemName, listNode,
     constructor, serializer, loader, contentBuilder }) {
     this.name = name;
     this.items = new Map();
@@ -12,6 +12,7 @@
     this.loader = loader;
     this.contentBuilder = contentBuilder;
   };
+  const WPObjType = wp.WPObjType;
 
   WPObjType.prototype.save = function () {
     if (!wp.initialized) return;
@@ -19,7 +20,7 @@
   };
 
   WPObjType.prototype.loadAll = function () {
-    var data = localStorage['wp-type-' + this.name];
+    let data = localStorage['wp-type-' + this.name];
     if (data) {
       try {
         data = JSON.parse(data);
@@ -30,14 +31,14 @@
     }
 
     if (data) {
-      for (var uuid of data) {
+      for (let uuid of data) {
         this.load(uuid);
       }
     }
   };
 
   WPObjType.prototype.load = function (uuid) {
-    var data = localStorage['wp-obj-' + uuid];
+    let data = localStorage['wp-obj-' + uuid];
     if (data) {
       try {
         data = JSON.parse(data);
@@ -48,7 +49,7 @@
     }
 
     if (data) {
-      var item = wp[data.type].new({ _uuid: data.uuid, name: data.name });
+      const item = wp[data.type].new({ _uuid: data.uuid, name: data.name });
       if (data.visible) {
         item.show();
         if (data.minimized) item.minimize();
@@ -58,7 +59,7 @@
   };
 
   WPObjType.prototype.new = function ({ _uuid, name }) {
-    var item = new WPObj({ _uuid: _uuid, type: this, name: name || this.defaultItemName });
+    const item = new WPObj({ _uuid: _uuid, type: this, name: name || this.defaultItemName });
 
     this.listNode.grab(item.buildObjNode());
     if (name) item.initialized = true;
@@ -67,7 +68,7 @@
     return item;
   };
 
-  var WPObj = wp.WPObj = function ({ _uuid, type, name }) {
+  wp.WPObj = function ({ _uuid, type, name }) {
     this.uuid = _uuid || wp.uuid();
     this.type = type;
     this.name = name;
@@ -81,6 +82,7 @@
     this.save();
     wp.dispatchEvent(this.type.name + ':new', this);
   }
+  const WPObj = wp.WPObj;
 
   WPObj.prototype.destroy = function () {
     wp.dispatchEvent(this.type.name + ':destroy', this);
@@ -107,21 +109,29 @@
   };
 
   WPObj.prototype.serialize = function () {
-    var data = Object.merge({
+    return Object.merge({
       uuid: this.uuid,
       type: this.type.name,
       name: this.name,
       visible: Array.from($('#content-list').children).findIndex(child => child.wpobj.uuid === this.uuid) > -1,
       minimized: this.contentNode && this.contentNode.classList.contains('minimized')
     }, this.type.serializer ? this.type.serializer.call(this) : {});
-
-    return data;
   };
 
   WPObj.prototype.buildObjNode = function () {
-    var self = this;
+    const self = this;
 
-    var node = this.objNode = new Element('div', {
+    function edit(ev) {
+      if (ev) ev.stop();
+      if (!node.classList.contains('editing')) {
+        // be sure to reset the input value if last change was canceled
+        node.$('input').value = node.wpobj.name;
+        node.classList.add('editing');
+        node.$('input').focus();
+      }
+    }
+
+    this.objNode = new Element('div', {
       class: 'collection-item',
       properties: { wpobj: this }
     }).adopt(
@@ -165,21 +175,12 @@
       })
     );
 
-    function edit(ev) {
-      if (ev) ev.stop();
-      if (!node.classList.contains('editing')) {
-        // be sure to reset the input value if last change was canceled
-        node.$('input').value = node.wpobj.name;
-        node.classList.add('editing');
-        node.$('input').focus();
-      }
-    }
+    const node = this.objNode;
+    node.edit = edit;
 
     this.addEventListener('name:changed', obj => {
       node.$('.item-name').textContent = obj.name;
     });
-
-    node.edit = edit;
 
     return node;
   };
@@ -205,9 +206,11 @@
   };
 
   WPObj.prototype.buildContentNode = function () {
-    var self = this;
-    var node = this.contentNode = new Element('div', {
-      class: this.type.name + '-content content'
+    const self = this;
+
+    this.contentNode = new Element('div', {
+      class: this.type.name + '-content content',
+      properties: { wpobj: this }
     }).adopt(
       new Element('h3', {
         class: 'control-container'
@@ -239,14 +242,13 @@
       node.$('.item-name').textContent = obj.name;
     });
 
-    this.workspace = node.$('.content-workspace');
-    if (this.type.contentBuilder) node = this.type.contentBuilder.call(this, node);
+    this.workspace = this.contentNode.$('.content-workspace');
 
-    node.wpobj = this;
+    const node = this.type.contentBuilder ? this.type.contentBuilder.call(this, this.contentNode) : this.contentNode;
 
     return node;
   };
-  
+
   Evented(WPObj);
 
 })(this);

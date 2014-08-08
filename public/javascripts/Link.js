@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var Link = wp.Link = function (source, target) {
+  wp.Link = function (source, target) {
     this.source = source;
     this.target = target;
     this.process = source.process;
@@ -19,6 +19,7 @@
       this.process.save();
     }
   };
+  const Link = wp.Link;
 
   Link.prototype.destroy = function () {
     this.hideInfoPanel();
@@ -39,7 +40,7 @@
   };
 
   Link._getLinkInfo = function (at, ar, ab, al, bt, br, bb, bl) {
-    var qp = Math.PI / 4,
+    const qp = Math.PI / 4,
     acx = (al + ar) / 2, acy = (at + ab) / 2,
     bcx = (bl + br) / 2, bcy = (bt + bb) / 2,
     a = Math.atan2(acy - bcy, bcx - acx);
@@ -56,7 +57,7 @@
   };
 
   Link._draw = function (x, y, xx, yy, a, dir) {
-    var hover;
+    let hover;
 
     hover = wp.draw.circle(this.ctx, this.c_conf, x, y, 3, {
       strokeStyle: 'black',
@@ -71,8 +72,8 @@
   };
 
   Link.draw = function (ctx, c_conf) {
-    var source = this.source.node, target = this.target.node;
-    var { a, dir, x, y, xx, yy } = Link._getLinkInfo(
+    let source = this.source.node, target = this.target.node;
+    const { a, dir, x, y, xx, yy } = Link._getLinkInfo(
       source.offsetTop, source.offsetLeft + source.offsetWidth,
       source.offsetTop + source.offsetHeight, source.offsetLeft,
       target.offsetTop, target.offsetLeft + target.offsetWidth,
@@ -82,7 +83,7 @@
     // if hover link, set variables and redraw with blur
     if (this.bound) ctx.setLineDash([10, 2]);
     if (Link._draw.call({ ctx: ctx, c_conf: c_conf }, x, y, xx, yy, a, dir) && !c_conf.linkFrom) {
-      var { shadowBlur, shadowColor } = ctx;
+      const { shadowBlur, shadowColor } = ctx;
       c_conf.hoverLink = this;
 
       wp.draw._conf(ctx, { shadowBlur: 3, shadowColor: c_conf.cursor.ev.altKey ? 'red' : 'black' });
@@ -101,7 +102,7 @@
   };
 
   Link.prototype.showInfoPanel = function (x, y) {
-    var
+    const
     self = this,
     overlay = this.process.overlay,
     panel = this.buildInfoPanel(),
@@ -127,7 +128,7 @@
 
   Link.prototype.buildInfoPanel = function () {
     if (this.panel) return this.panel;
-    var self = this;
+    const self = this;
 
     return (this.panel = new Element('div', {
       class: 'link-info panel',
@@ -148,7 +149,7 @@
           events: { click: function () { self.destroy(); } }
         })].concat(
           (() => {
-            var params = this.target.type.params.filter(param => param.bindable);
+            const params = this.target.type.params.filter(param => param.bindable);
             if (!params.length) return [];
 
             return new Element('p').adopt(
@@ -162,7 +163,7 @@
               }).grab(
                 new Element('option', { text: '<none>', value: '<none>' })
               ).adopt(params.map(param => {
-                var name = param.name || this.target.type.value;
+                const name = param.name || this.target.type.value;
                 return new Element('option', {
                   text: name.capitalize(),
                   value: name,

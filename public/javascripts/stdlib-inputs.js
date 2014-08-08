@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var node = new Element('div', {
+  const node = new Element('div', {
     id: 'library-inputs',
     class: 'collection-category'
   }).grab(new Element('h3', { text: 'Inputs' }));

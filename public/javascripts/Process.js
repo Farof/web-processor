@@ -1,7 +1,7 @@
 (exports => {
   "use strict";
 
-  var Process = wp.Process = new wp.WPObjType({
+  wp.Process = new wp.WPObjType({
     name: 'Process',
     defaultItemName: 'My process',
     listNode: $('#process-list'),
@@ -222,7 +222,7 @@
 
       function c_update(ev) {
         c_clear();
-        if (c_conf.cursor.in && c_conf.linkFrom) c_drawNewLink(ev);
+        if (ev && c_conf.cursor.in && c_conf.linkFrom) c_drawNewLink(ev);
         self.items.forEach(item => item.out.forEach(link => link.draw(ctx, c_conf)));
       }
 
@@ -323,12 +323,13 @@
       return node;
     }
   });
+  const Process = wp.Process;
 
-  wp.Process.initAll = function () {
+  Process.initAll = function () {
     this.items.forEach(item => item.initialize());
   };
 
-  wp.Process.executeAll = function () {
+  Process.executeAll = function () {
     this.items.forEach(item => item.execute(true));
   };
 

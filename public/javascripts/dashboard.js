@@ -1,24 +1,24 @@
 (exports => {
   "use strict";
 
-  var $ = this.$ = function (selector) {
+  this.$ = function (selector) {
     return document.querySelector(selector);
   };
 
-  var wp = exports.wp = {
+  const wp = {
     initialized: false,
     proxyURL: '/proxy?url=',
 
     uuid: function () {
-      var id;
+      let id;
       do { id = uuid(); } while (!isNaN(parseInt(id, 10)));
       return id;
     },
 
     cleanStorage: function () {
-      var objects = [], exists = [];
+      const objects = [], exists = [];
 
-      for (var key in localStorage) {
+      for (let key in localStorage) {
         if (key.indexOf('wp-obj') > -1) objects.push(key);
       }
 
@@ -27,7 +27,7 @@
 
       console.log('valid storage objects keys: ', exists);
 
-      for (var obj of objects) {
+      for (let obj of objects) {
         if (!exists.contains(obj)) {
           delete localStorage[obj];
         } else {
@@ -49,5 +49,7 @@
     wp.Process.initAll();
     wp.Process.executeAll();
   });
+
+  exports.wp = wp;
 
 })(this);
